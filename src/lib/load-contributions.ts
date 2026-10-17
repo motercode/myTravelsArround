@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { authorFromUrl, photoIdFromUrl, type Contribution } from "@/lib/contributions";
+import { authorFromUrl, photoIdFromUrl, stableThumbnailUrl, type Contribution } from "@/lib/contributions";
 
 // Formato generado por ../contribExtraction (contribuciones.json).
 const extractionFileSchema = z.object({
@@ -54,7 +54,7 @@ export function loadContributions(): Contribution[] {
         lng: coords.longitude,
         author: authorFromUrl(item.url),
         mapsUrl: item.mapsUrlCanonical ?? item.url,
-        imageUrl: item.imageUrl,
+        imageUrl: item.imageUrl ? stableThumbnailUrl(item.imageUrl) : undefined,
       });
     }
   }
