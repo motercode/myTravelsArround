@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
-// Netlify despliega Next.js con su adaptador OpenNext (@netlify/plugin-nextjs),
-// que se instala automáticamente: no hace falta `output: "standalone"`.
+// Netlify despliega Next.js con su adaptador @netlify/plugin-nextjs.
 const nextConfig: NextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true,
 };
 
 export default nextConfig;
