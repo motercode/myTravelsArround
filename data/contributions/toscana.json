@@ -1,0 +1,161 @@
+{
+  "total": 12,
+  "items": [
+    {
+      "index": 1,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipMugelcIvRyZvp-lT5sGkggy9eii7x-83h7JSPL?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczOf_B_HrP7q8BlbP4Y_BHiayzFCfakhPy5fdBwuhZAWzXm7MzNYaub8hPgGJgxme-Xj9fDPNYMFVPpRppTu8NGPfazcw_xHz0Z4vua5R4exxCAjLodX=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.714722,
+        "longitude": 10.395833
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2012-08-15T17:45:31",
+      "takenAtSource": "album",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 2,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipMZnGcqh46Xf_4SUNhIqzSUDx3WddglAL5kq4Rq?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczMKTyPKtP5SbUhl_1Bt-enOikYu3zOY7CPX-pkSzWd0XcNBPIxp_2wI827li6Vkr6JOiykigEWFaQ_rIjiKxia0WRSEZXt_2i-lSdGiP4KH5vzOXlu3=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.932613,
+        "longitude": 11.655137
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2017-09-02T11:58:23",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 3,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipN683Y589TdoI74i6MTAJ8Ry7b89wp5mxrGD3Ly?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczPqWmsvRV18aUBNE8Wp5YBefnQbFlsCy9JkZgWG4jSR6O4QmmRVbw1fc7_1PCCRpZuMZ20rIUOJjSBwpQhXDkUQoVb_v48fBbQkpnBUsAKpJwiYZqLu=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.598545,
+        "longitude": 11.176349
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-05-18T16:01:47",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 4,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipOKDmH3VFFv8dJDSJKdJHUn_Cazcx9UGTfrbRz9?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczPTan8Tv5AXg_tlT_taFMljnId2xb7_iZ_pAyKg9bEOEYjaskiAXYG9b0CEjm7dPpXgJpKgxe1RIJ2DGeuG8PTQ9c_N8ZBFIfJNPildAaTAEHa_oOdp=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 42.414051,
+        "longitude": 11.852345
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-06-26T22:59:11",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 5,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipOAClduXa3DIJ9MfhrxwtfYYh8R4uibajk932DE?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczMTox6KOQa33aVKwqgFsBCI7onpKBkbG6d3mRi6XcDdke-7b__kmkweVZlnT4anUab2VjRKMBD21UQdyKcSxTFkmgaR0SkKjapRwetWq_kB0fe_l0Y_=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 42.421722,
+        "longitude": 12.064741
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-06-27T11:26:11",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 6,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipPHVrljJCRIdNcNuKtT96f14F9EqxObzYz5SpNN?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczMo9gG6WTz0vNqfnuHAhQ_xlT_-pVPTCA6UYHp5q9Ok98-6b2YVKjK3oTuQ8WBCHuiH7L2ZopBr7pGjNiGKK4q73WaWF0myxi86PfA5nv1IxmHD0pdT=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 42.634689,
+        "longitude": 11.668025
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-06-27T13:02:28",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 7,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipPVsfMBpRczMt6ibifEHx6zl-XX9p_NROLFKV_L?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczMNa14mgkfPrjGJQ5Dz8Dv6ZWwandlI3f4EWWY9sf7WgJ8hdIeDVG1l-8C-ShNQ2j0HxOWY-7aJAsVcylI8cKM_ORv4PZyV2gLG3B_5D4bHN0FpZ5_V=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 42.903976,
+        "longitude": 11.512196
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-06-27T15:23:53",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 8,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipN07Rmrm1ElrezZGziV6IhO-nHEMR3P2ze24iqQ?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczNPczQYuoOgUDMh3GoM-1zktoKfY89TM478s93IEUB_-FHwn8KFJhjCktBvEf8A56eGo5RFmsg987W5UvXcWi_czehfBd-yaQpC-S9BW5a2KHvsFFZa=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.216167,
+        "longitude": 11.259972
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-06-27T16:33:13",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 9,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipNZcoIHoMyed61ivSm_OOGO2vIKNk6cO7F8H2uj?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczMBNChW0cRQmhuonNTACDoZ9jwtTF_TYXWS37aUNzimYCC71y3whrdiK4h3LCrPZawvi2YujwLNqCYNkQKnVk3KJkHMTmr_Ct1dracbxd_7VI6yh2bA=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.979969,
+        "longitude": 10.89936
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2018-06-28T11:06:19",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 10,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipNUNL6IKtJx3CC3XA_sYdtkEqXnaPhQ4Qhgm7mX?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczO8eVqZdf-y5gLhGZZriC-PBWmPrA04XjT7uxkF8Nne0szOx9FPocLtGgMiWvSPP59i_WmQwRqZygw1mfcGberc_TJ-YIPnYAieTChR1FEW5aAXiPJj=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.929741,
+        "longitude": 11.849717
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2020-06-17T11:55:04",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 11,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipNwcDvBgSGpoTrH_EMCgFNvj-LlIgdTOwxx_5xO?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczPVwBRhbTdvpXqp4QBpB8qc7jeLVugbdyW79wxNnIeBudTi4rIajaLUmdjcutIvq42FfavBTmPa3GIKKW34Pe-zRBScbn54VZD3jmIPq-l7aV3eX6Tf=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.795286,
+        "longitude": 11.89269
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2020-06-17T17:37:17",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    },
+    {
+      "index": 12,
+      "url": "https://photos.google.com/share/AF1QipM88uKfqJde0FhfqV9Py6j9jMBY2L3bM1UFYth6-sLnimT833Cjo_QiR9CFCF9O7Q/photo/AF1QipOnV0UIpv2dR3HgElgHUDvSsIG8u5LgY0STgOhi?key=SlJLLXFUSTQ1T0V2dU14cjgweHBSM2YzdjJMOWl3",
+      "imageUrl": "https://lh3.googleusercontent.com/pw/AP1GczOGkWxguNVgB0pHFhTjM4C5XY9dCsDqzOsw4I3DCNP4guW8EwHKC5sB5VWqD8dKygkR20gZXn9KM2_-sQPs7TttKytS0d__8rIRslv12vaFH3-edoxA=w400-h240-p-k-no",
+      "coordinates": {
+        "latitude": 43.810003,
+        "longitude": 11.855041
+      },
+      "capturedAt": "2026-10-17T22:56:49.449Z",
+      "takenAt": "2020-06-18T17:31:33",
+      "takenAtSource": "exif",
+      "source": "googlePhotosAlbum"
+    }
+  ]
+}

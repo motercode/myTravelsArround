@@ -47,12 +47,15 @@ export function loadContributions(): Contribution[] {
       const coords = item.coordinates;
       if (!coords || !isValidPosition(coords.latitude, coords.longitude)) continue;
 
-      const id = photoIdFromUrl(item.url) ?? item.url;
+      // La clave lleva el autor: el export de prueba (testA) repite los photoId de otro autor
+      // y no debe reemplazar sus fotos.
+      const author = authorFromUrl(item.url);
+      const id = `${author}:${photoIdFromUrl(item.url) ?? item.url}`;
       byId.set(id, {
         id,
         lat: coords.latitude,
         lng: coords.longitude,
-        author: authorFromUrl(item.url),
+        author,
         mapsUrl: item.mapsUrlCanonical ?? item.url,
         imageUrl: item.imageUrl ? stableThumbnailUrl(item.imageUrl) : undefined,
       });

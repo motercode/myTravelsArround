@@ -4,6 +4,8 @@
 export const AUTHORS: Record<string, string> = {
   "102214896434264755474": "motercode",
   "102784682183746369499": "fernando gost",
+  // Ficticio: export de prueba desde la red (contribExtraction, npm run exportTest).
+  "999999999999999999999": "testA",
 };
 
 export type Contribution = {
