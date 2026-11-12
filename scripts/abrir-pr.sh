@@ -2,15 +2,17 @@
 # Abre el PR de la rama actual con la plantilla de .github/pull_request_template.md rellenada:
 # «Closes #N» sacado de la rama, la descripción de los cambios y el informe de scripts/comprobar.sh
 # como evidencia. Las casillas de lint, build y tests se marcan según ese informe; el resto se
-# revisa a mano en el PR.
+# marca con -x cuando el agente o la persona lo ha comprobado.
 #
-# Uso: scripts/abrir-pr.sh -T "feat(map): título en español (#N)" -c cambios.md [-d]   (-d: borrador)
+# Uso: scripts/abrir-pr.sh -T "feat(map): título en español (#N)" -c cambios.md [-d] [-x texto]...
+#   -d        PR en borrador
+#   -x texto  marca la casilla que contiene «texto» (repetible), p. ej. -x "Ningún secreto"
 source "$(dirname "$0")/lib/comun.sh"
 
-titulo="" cambios="" borrador=()
-while getopts "T:c:d" opt; do
+titulo="" cambios="" borrador=() extras=()
+while getopts "T:c:dx:" opt; do
   case "$opt" in
-    T) titulo="$OPTARG" ;; c) cambios="$OPTARG" ;; d) borrador=(--draft) ;;
+    T) titulo="$OPTARG" ;; c) cambios="$OPTARG" ;; d) borrador=(--draft) ;; x) extras+=("$OPTARG") ;;
     *) error "opción no válida (mira la cabecera del script)" ;;
   esac
 done
@@ -25,8 +27,15 @@ grep -q "($(git rev-parse --short HEAD))" "$INFORME" \
 ! grep -q '^### ❌' "$INFORME" || error "el informe tiene comprobaciones fallidas"
 [[ -z "$(git status --porcelain)" ]] || error "hay cambios sin commit"
 
-# Marca la casilla de la plantilla que contiene el texto $1.
-marcar() { sed -i "/$1/s/- \[ \]/- [x]/" "$cuerpo"; }
+# Marca la casilla sin marcar que contiene el texto literal $1 (sin regex: los textos llevan
+# comillas invertidas, asteriscos y paréntesis). Falla si no hay ninguna.
+marcar() {
+  awk -v t="$1" 'BEGIN { hecho = 1 }
+    index($0, "- [ ] ") == 1 && index($0, t) { sub(/- \[ \]/, "- [x]"); hecho = 0 }
+    { print } END { exit hecho }' "$cuerpo" > "$cuerpo.tmp" \
+    || { rm -f "$cuerpo.tmp"; error "ninguna casilla sin marcar contiene «$1»"; }
+  mv "$cuerpo.tmp" "$cuerpo"
+}
 
 cuerpo="$(mktemp)"
 trap 'rm -f "$cuerpo"' EXIT
@@ -42,6 +51,7 @@ if grep -q '^### ✅ npm run test$' "$INFORME" && grep -q '^### ✅ npm run test
 elif grep -q '^### ➖ npm run test' "$INFORME"; then
   sed -i '/npm test/s/$/ — no aplica: tests aún no configurados./' "$cuerpo"
 fi
+for texto in "${extras[@]}"; do marcar "$texto"; done
 # La evidencia sustituye al comentario de la sección.
 sed -i "/^<!-- Pega aquí/{
 r $INFORME
@@ -49,4 +59,10 @@ d
 }" "$cuerpo"
 
 git push -u origin "$(git branch --show-current)"
-gh pr create --base main --title "$titulo" --body-file "$cuerpo" "${borrador[@]}"
+# Si la rama ya tiene un PR abierto, se actualiza: así la evidencia sigue al último commit.
+if pr="$(gh pr view --json url,state -q 'select(.state == "OPEN") | .url' 2>/dev/null)" && [[ -n "$pr" ]]; then
+  gh pr edit "$pr" --title "$titulo" --body-file "$cuerpo" >/dev/null
+  info "PR actualizado: $pr"
+else
+  gh pr create --base main --title "$titulo" --body-file "$cuerpo" "${borrador[@]}"
+fi
