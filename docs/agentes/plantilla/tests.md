@@ -40,7 +40,7 @@ export default defineConfig({
 ```
 
 `playwright.config.ts`: Playwright arranca el servidor de desarrollo él mismo y reutiliza el que ya
-esté abierto. El puerto debe coincidir con el de `npm run dev` (en myTravelsArround, 3030).
+esté abierto. El puerto debe coincidir con el de `npm run dev` del proyecto.
 
 ```ts
 import { defineConfig } from '@playwright/test';
@@ -75,8 +75,8 @@ Next.js 16 también es un proyecto CommonJS por defecto: la configuración de Vi
   Los tests sobreviven a los cambios de estilo y comprueban de paso la accesibilidad.
 - **Comprobar que no hay duplicados** con `toHaveCount(1)` en los bloques principales: detecta
   componentes que se pintan dos veces.
-- **Esperar a la hidratación** antes de interactuar: espera a algo que solo pinta el cliente (en
-  myTravelsArround, el control de zoom del mapa). Un clic antes cambia el DOM pero no el estado.
+- **Esperar a la hidratación** antes de interactuar: espera a algo que solo pinta el cliente (por
+  ejemplo, un control de un componente que se carga con `ssr: false`). Un clic antes cambia el DOM pero no el estado.
 - **Un E2E por recorrido**: entrar, navegar a un detalle y comprobar lo que se ve allí.
 - **Datos de prueba ficticios** y deterministas; los datos reales no entran en los fixtures
   (ver [privacidad-y-logs.md](privacidad-y-logs.md)).
