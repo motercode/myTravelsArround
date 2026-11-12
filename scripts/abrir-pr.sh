@@ -36,9 +36,10 @@ sed -i "s/^Closes #$/Closes #$issue/" "$cuerpo"
 sed -i "/^## Cambios$/r $cambios" "$cuerpo"
 grep -q '^### ✅ npm run lint' "$INFORME" && marcar 'npm run lint'
 grep -q '^### ✅ npm run build' "$INFORME" && marcar 'npm run build'
-if grep -q '^### ✅ npm run test$' "$INFORME"; then
+# La casilla cubre unitarios y E2E: solo se marca si pasan los dos.
+if grep -q '^### ✅ npm run test$' "$INFORME" && grep -q '^### ✅ npm run test:e2e$' "$INFORME"; then
   marcar 'npm test'
-else
+elif grep -q '^### ➖ npm run test' "$INFORME"; then
   sed -i '/npm test/s/$/ — no aplica: tests aún no configurados./' "$cuerpo"
 fi
 # La evidencia sustituye al comentario de la sección.
