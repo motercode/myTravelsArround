@@ -2,7 +2,7 @@
 # Empieza un cambio: issue (nuevo o existente) y rama tipo/issue-N-descripcion desde main al día.
 #
 # Uso:
-#   scripts/nuevo-cambio.sh -t feat -s viajes-fase-1 -T "Título del issue" [-b cuerpo.md]
+#   scripts/nuevo-cambio.sh -t feat -s busqueda -T "Título del issue" [-b cuerpo.md]
 #   scripts/nuevo-cambio.sh -t fix  -s fecha-duplicada -i 31      # issue ya creado
 source "$(dirname "$0")/lib/comun.sh"
 
