@@ -19,10 +19,15 @@ Requisitos: Node.js 22 (el mismo que usa Netlify).
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # build de producción (lee los datos)
+npm run dev        # http://localhost:3030
+npm run build      # build de producción (lee los datos)
 npm run lint
+npm test           # tests unitarios (Vitest)
+npm run test:e2e   # tests E2E (Playwright; la primera vez: npx playwright install chromium)
 ```
+
+Para contribuir, empieza por [AGENTS.md](AGENTS.md): reglas, ciclo de un cambio y los scripts que lo
+automatizan (`scripts/nuevo-cambio.sh`, `scripts/comprobar.sh`, `scripts/abrir-pr.sh`).
 
 ### Añadir o actualizar fotos
 
@@ -76,6 +81,12 @@ src/components/map/
 src/components/ui/           Componentes shadcn/ui
 src/lib/contributions.ts     Tipos, autores y utilidades para las URLs de Maps
 src/lib/load-contributions.ts  Lectura, validación y deduplicado de los datos
+src/lib/*.test.ts            Tests unitarios (fixtures ficticios en src/lib/__fixtures__/)
+e2e/                         Tests E2E de Playwright
+scripts/                     Automatización del ciclo issue → rama → comprobaciones → PR
+docs/features/               Especificación de cada feature por fases
+docs/agentes/plantilla/      Guías comunes para webs Next.js (alimentan next-netlify-template)
+AGENTS.md                    Punto de entrada para agentes y personas nuevas
 netlify.toml                 Configuración de build y despliegue
 ```
 
@@ -125,13 +136,40 @@ Por eso existe `contribExtraction`. Recorre el perfil público en un navegador C
 - **Por qué no `public/`.** Ahí se publicaría el JSON en bruto, y para el mapa solo hacen falta unos pocos campos por foto.
 - **Validación con zod.** Si cambia el formato del extractor, el build falla con un error claro en lugar de dibujar un mapa vacío.
 
+### Proceso: issues, prioridades y PR con evidencia
+
+- Cada cambio sale de un issue y llega por PR con la plantilla de `.github/pull_request_template.md`
+  y la salida de `scripts/comprobar.sh` como evidencia (detalle en [AGENTS.md](AGENTS.md)).
+- Las prioridades se marcan con las etiquetas `prioridad: alta`, `prioridad: media` y
+  `prioridad: baja`, y `scripts/prioridades.sh` las vuelca en «Prioridades» al final de este README.
+- Tests unitarios con Vitest sobre datos ficticios y E2E con Playwright contra `npm run dev` en
+  `localhost` (con `127.0.0.1`, Next.js 16 no hidrata la página en desarrollo).
+
 ### Puntos sin agrupar, dibujados en canvas
 
 Los puntos se dibujan en canvas (`preferCanvas`), que aguanta varios miles sin problema y deja ver la densidad real de fotos.
 Si el mapa se satura, se puede añadir agrupación de marcadores.
 
-## Pendiente
+## Prioridades
 
-- Añadir la extracción de **fernando gost** (`102784682183746369499`) a `data/contributions/`.
-- Valorar la agrupación de marcadores cuando haya miles de puntos.
-- Valorar mostrar también las reseñas y los sitios guardados del Takeout como capas opcionales.
+Issues abiertos por orden de prioridad (etiquetas `prioridad: alta`, `prioridad: media` y
+`prioridad: baja` en GitHub). La lista la genera `scripts/prioridades.sh`: ejecútalo al abrir,
+cerrar o reetiquetar issues.
+
+<!-- BEGIN:prioridades -->
+
+**Alta**
+1. [#5](https://github.com/motercode/myTravelsArround/issues/5) Configurar tests unitarios (Vitest) y E2E (Playwright)
+2. [#7](https://github.com/motercode/myTravelsArround/issues/7) Las fotos de álbumes de Google Fotos salen como autor «desconocido»
+3. [#8](https://github.com/motercode/myTravelsArround/issues/8) Viajes, fase 1: agrupar las fotos en viajes y filtrar el mapa por viaje
+4. [#13](https://github.com/motercode/myTravelsArround/issues/13) README al día y lista de prioridades
+
+**Media**
+5. [#9](https://github.com/motercode/myTravelsArround/issues/9) Agrupar marcadores en el mapa
+
+**Baja**
+6. [#10](https://github.com/motercode/myTravelsArround/issues/10) Viajes, fase 2: ver las fotos de un viaje como presentación
+7. [#11](https://github.com/motercode/myTravelsArround/issues/11) Viajes, fase 3: recorrido desde una foto por tiempo o distancia
+8. [#12](https://github.com/motercode/myTravelsArround/issues/12) Capas opcionales con reseñas y sitios guardados del Takeout
+
+<!-- END:prioridades -->

@@ -19,7 +19,7 @@ escribir código, lee la guía de la versión instalada en `node_modules/next/di
 
 1. **Sitio estático.** Sin backend ni base de datos: `export const dynamic = "force-static"` en las
    páginas; lo que dependa de los datos se calcula en el build o en el navegador.
-2. **Ni secretos ni datos privados en git.** `.env*` se queda fuera (salvo `.env.example`). En
+2. **Ni secretos ni datos privados en git.** `.env*` se queda fuera (lo cubre el `.gitignore`). En
    `data/contributions/` solo entran fotos **públicas** de Google Maps. Lo que lleva `NEXT_PUBLIC_`
    llega al navegador. → [privacidad-y-logs.md](docs/agentes/plantilla/privacidad-y-logs.md)
 3. **Antes de cada commit y de cada PR:** `npm run lint` y `npm run build` en verde, y `npm test` y
@@ -40,7 +40,9 @@ escribir código, lee la guía de la versión instalada en `node_modules/next/di
 Automatizado con los scripts de `scripts/` y la skill `ciclo-de-cambio`
 (→ [scripts.md](docs/agentes/plantilla/scripts.md)). Si un paso se repite, automatízalo igual.
 
-1. Issue con el contexto; si es una feature, su especificación en `docs/features/<feature>.md`.
+1. Issue con el contexto y su etiqueta `prioridad: alta|media|baja` (→ `scripts/prioridades.sh`
+   actualiza «Prioridades» del README); si es una feature, su especificación en
+   `docs/features/<feature>.md`.
    Rama desde `main`: `tipo/issue-N-descripcion-corta` (`feat/issue-12-viajes-fase-1`).
    → `scripts/nuevo-cambio.sh`
 2. Código y tests de la fase; nada de fases que no se han pedido.

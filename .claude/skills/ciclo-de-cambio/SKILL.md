@@ -17,6 +17,9 @@ si un script falla o necesitas sus opciones.
   `scripts/nuevo-cambio.sh -t <tipo> -s <descripcion-corta> -T "<título>" -b <fichero>`.
   Crear un issue es público: confírmalo con el usuario si no lo ha pedido.
 - Tipos: `feat`, `fix`, `test`, `docs`, `chore`, `refactor`. Descripción corta en español.
+- Todo issue nuevo lleva una etiqueta `prioridad: alta|media|baja` (pregunta al usuario si no está
+  claro) y después se ejecuta `scripts/prioridades.sh` para actualizar el README.
+- Para elegir el siguiente trabajo, empieza por el primero de «Prioridades» del README.
 - Si es una feature, escribe o actualiza `docs/features/<feature>.md` antes del código.
 
 ## 2. Trabajar
