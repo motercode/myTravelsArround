@@ -9,6 +9,14 @@ Sigue las reglas de [AGENTS.md](../../../AGENTS.md); esta skill solo automatiza 
 scripts de `scripts/`. Lee [docs/agentes/plantilla/scripts.md](../../../docs/agentes/plantilla/scripts.md)
 si un script falla o necesitas sus opciones.
 
+## 0. Antes de empezar
+
+- `git status`: si hay cambios sin commit que no son tuyos, pregunta al usuario qué hacer con ellos
+  y no los mezcles con tu PR (si hay que apartarlos, `git stash push -m "<de quién y qué>" -- <ficheros>`
+  y recupéralos al terminar).
+- `gh pr list`: si hay PR abiertos que tocan lo mismo, pregunta si esperar al merge o apilar la
+  rama encima, y dilo en el PR.
+
 ## 1. Empezar
 
 - Si hay issue: `scripts/nuevo-cambio.sh -t <tipo> -s <descripcion-corta> -i <N> [-p <prioridad>]`.
@@ -25,14 +33,15 @@ si un script falla o necesitas sus opciones.
 ## 2. Trabajar
 
 - Solo la fase pedida. Antes de escribir código Next.js, consulta `node_modules/next/dist/docs/`.
-- Clasifica cada pieza nueva: plantilla (genérica, sin viajes ni mapas, guía en
+- Clasifica cada pieza nueva: plantilla (genérica, sin nada del negocio, guía en
   `docs/agentes/plantilla/`) o negocio.
 - Si un paso se repite, automatízalo con un script o una skill nueva en el mismo PR y apúntalo en
   `docs/agentes/plantilla/README.md` o `scripts.md`.
 
 ## 3. Comprobar y hacer commit
 
-1. `scripts/comprobar.sh` hasta que todo esté en verde. No borres tests para que pase.
+1. `scripts/comprobar.sh` hasta que todo esté en verde. No borres tests para que pase. Si falla la
+   regla 6, generaliza el texto; si un término es legítimo, ajústalo en `scripts/proyecto.env`.
 2. Si avisa de cambios en `AGENTS.md` (bloque de `next dev`), inclúyelos en el commit.
 3. `git status`: que no entre ningún `.env*` ni dato privado.
 4. Commit en inglés, Conventional Commits, `(#N)` al final y la línea `Co-Authored-By:` del agente.
@@ -49,3 +58,8 @@ si un script falla o necesitas sus opciones.
 4. Tras nuevos commits en la rama: `scripts/comprobar.sh` y el mismo `abrir-pr.sh`, que actualiza
    el PR abierto con la evidencia nueva.
 5. Da al usuario el enlace del PR.
+
+## 5. Después del merge
+
+`scripts/cerrar-cambio.sh` (desde la rama del cambio): comprueba que el PR está mergeado, pone
+`main` al día, borra la rama local y la remota si sigue, y muestra los issues de prioridad alta.

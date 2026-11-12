@@ -33,7 +33,18 @@ escribir código, lee la guía de la versión instalada en `node_modules/next/di
    arquitectura y proceso → «Decisiones del proyecto» del README.
 6. **Lo reutilizable, separado del negocio.** Lo que serviría en cualquier web Next.js + Netlify va
    sin nada de viajes ni mapas y su guía a `docs/agentes/plantilla/`: es lo que alimenta el template
-   `motercode/next-netlify-template`.
+   `motercode/next-netlify-template`. Los términos prohibidos están en `scripts/proyecto.env` y
+   `scripts/comprobar.sh` los busca.
+
+## Trampas conocidas
+
+- **`localhost`, no `127.0.0.1`, con `npm run dev`.** Next.js 16 bloquea los recursos de desarrollo
+  pedidos desde otro origen y la página no se hidrata (→ [tests.md](docs/agentes/plantilla/tests.md)).
+- **`next-env.d.ts` cambia solo** al alternar `next dev` y `next build`: no es un cambio tuyo.
+  `scripts/comprobar.sh` lo deja como estaba.
+- **`next dev` reescribe su bloque al final de este fichero.** Si aparece como cambio, va en el commit.
+- **E2E: espera a la hidratación** antes de hacer clic (algo que solo pinta el cliente); antes, el
+  clic cambia el DOM pero no el estado.
 
 ## Ciclo de un cambio
 
@@ -48,6 +59,7 @@ Automatizado con los scripts de `scripts/` y la skill `ciclo-de-cambio`
 3. Comprobaciones de la regla 3. → `scripts/comprobar.sh`
 4. PR con la plantilla de `.github/pull_request_template.md`. → `scripts/abrir-pr.sh`
    Cada merge a `main` despliega en Netlify.
+5. Tras el merge: `main` al día y ramas borradas. → `scripts/cerrar-cambio.sh`
 
 ## Comandos
 
@@ -58,7 +70,7 @@ npm run lint       # ESLint
 npm run build      # build estático, el mismo que hace Netlify
 npm test           # unitarios (Vitest), junto al código: src/**/*.test.ts
 npm run test:e2e   # E2E (Playwright) en e2e/; arranca npm run dev si no está abierto
-scripts/comprobar.sh   # secretos, lint, build y tests; informe en .evidencia/
+scripts/comprobar.sh   # secretos, regla 6, lint, build y tests; informe en .evidencia/
 ```
 
 <!-- BEGIN:nextjs-agent-rules -->

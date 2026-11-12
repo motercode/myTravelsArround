@@ -22,3 +22,13 @@ issue_de_rama() {
 tiene_script_npm() {
   node -e "process.exit(require('$RAIZ/package.json').scripts?.['$1'] ? 0 : 1)"
 }
+
+# Configuración del proyecto (negocio): términos y rutas que usan los scripts genéricos.
+# Si no existe, las comprobaciones que dependen de ella se saltan.
+PROYECTO_ENV="$RAIZ/scripts/proyecto.env"
+# Con if y no con &&: si falta el fichero, un && como última línea haría fallar el source de
+# este fichero bajo set -e.
+if [[ -f "$PROYECTO_ENV" ]]; then
+  # shellcheck source=/dev/null
+  source "$PROYECTO_ENV"
+fi
