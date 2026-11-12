@@ -19,7 +19,7 @@ escribir código, lee la guía de la versión instalada en `node_modules/next/di
 
 1. **Sitio estático.** Sin backend ni base de datos: `export const dynamic = "force-static"` en las
    páginas; lo que dependa de los datos se calcula en el build o en el navegador.
-2. **Ni secretos ni datos privados en git.** `.env*` se queda fuera (salvo `.env.example`). En
+2. **Ni secretos ni datos privados en git.** `.env*` se queda fuera (lo cubre el `.gitignore`). En
    `data/contributions/` solo entran fotos **públicas** de Google Maps. Lo que lleva `NEXT_PUBLIC_`
    llega al navegador. → [privacidad-y-logs.md](docs/agentes/plantilla/privacidad-y-logs.md)
 3. **Antes de cada commit y de cada PR:** `npm run lint` y `npm run build` en verde, y `npm test` y
