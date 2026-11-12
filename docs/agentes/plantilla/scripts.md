@@ -8,6 +8,7 @@ Son genéricos: sirven en cualquier web Next.js + Netlify con `gh` autenticado, 
 | `scripts/nuevo-cambio.sh` | Pone `main` al día, crea el issue (o usa uno existente) y la rama `tipo/issue-N-descripcion` |
 | `scripts/comprobar.sh` | Comprueba que no hay `.env*` en git, ejecuta lint, build y, si existen los scripts npm `test` y `test:e2e`, los tests. Guarda la salida en `.evidencia/comprobaciones.md` (no versionado) |
 | `scripts/abrir-pr.sh` | Sube la rama y abre el PR con la plantilla rellenada: `Closes #N`, los cambios, las casillas de lint, build y tests según el informe, las que se indiquen con `-x` y el informe como evidencia. Si la rama ya tiene un PR abierto, lo actualiza |
+| `scripts/prioridades.sh` | Regenera la lista de prioridades del README (entre `<!-- BEGIN:prioridades -->` y `<!-- END:prioridades -->`) desde los issues abiertos y sus etiquetas `prioridad: alta/media/baja`; `--check` solo comprueba |
 | `scripts/lib/comun.sh` | Funciones compartidas |
 | `.claude/skills/ciclo-de-cambio/` | Skill de Claude Code que guía al agente por el ciclo usando estos scripts |
 
@@ -22,6 +23,7 @@ scripts/comprobar.sh                     # el informe tiene que ser del último 
 scripts/abrir-pr.sh -T "fix(orders): no se duplica el pedido (#31)" -c cambios.md \
   -x "Ningún secreto" -x "separado del negocio"   # casillas revisadas a mano
 # tras más commits: comprobar.sh y el mismo abrir-pr.sh actualizan el PR
+scripts/prioridades.sh                  # tras abrir, cerrar o reetiquetar issues
 ```
 
 ## Por qué así
@@ -36,5 +38,8 @@ scripts/abrir-pr.sh -T "fix(orders): no se duplica el pedido (#31)" -c cambios.m
   falla si el texto no coincide con ninguna casilla.
 - `nuevo-cambio.sh` crea la rama desde `origin/main` sin pasar por el `main` local, para no fallar
   con cambios sin commit.
+- Las prioridades viven en las etiquetas de GitHub (se ordenan y filtran allí) y el README solo
+  las refleja; `prioridades.sh` evita mantener dos listas a mano. Para usarlo en otro proyecto:
+  crear las tres etiquetas y poner los dos marcadores en su README.
 - `comprobar.sh` deja `next-env.d.ts` como estaba: `next build` y `next dev` (que arrancan los E2E)
   lo reescriben con rutas distintas.

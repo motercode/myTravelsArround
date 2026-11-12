@@ -40,7 +40,9 @@ escribir código, lee la guía de la versión instalada en `node_modules/next/di
 Automatizado con los scripts de `scripts/` y la skill `ciclo-de-cambio`
 (→ [scripts.md](docs/agentes/plantilla/scripts.md)). Si un paso se repite, automatízalo igual.
 
-1. Issue con el contexto; si es una feature, su especificación en `docs/features/<feature>.md`.
+1. Issue con el contexto y su etiqueta `prioridad: alta|media|baja` (→ `scripts/prioridades.sh`
+   actualiza «Prioridades» del README); si es una feature, su especificación en
+   `docs/features/<feature>.md`.
    Rama desde `main`: `tipo/issue-N-descripcion-corta` (`feat/issue-12-viajes-fase-1`).
    → `scripts/nuevo-cambio.sh`
 2. Código y tests de la fase; nada de fases que no se han pedido.
