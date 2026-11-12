@@ -140,8 +140,9 @@ Por eso existe `contribExtraction`. Recorre el perfil público en un navegador C
 
 - Cada cambio sale de un issue y llega por PR con la plantilla de `.github/pull_request_template.md`
   y la salida de `scripts/comprobar.sh` como evidencia (detalle en [AGENTS.md](AGENTS.md)).
-- Las prioridades se marcan con las etiquetas `prioridad: alta`, `prioridad: media` y
-  `prioridad: baja`, y `scripts/prioridades.sh` las vuelca en «Prioridades» al final de este README.
+- Las prioridades se marcan solo con las etiquetas `prioridad: alta`, `prioridad: media` y
+  `prioridad: baja`. El README enlaza a los issues filtrados por etiqueta en lugar de copiar la
+  lista, que se desfasaba con cada issue cerrado o reetiquetado (#15).
 - Tests unitarios con Vitest sobre datos ficticios y E2E con Playwright contra `npm run dev` en
   `localhost` (con `127.0.0.1`, Next.js 16 no hidrata la página en desarrollo).
 
@@ -152,24 +153,9 @@ Si el mapa se satura, se puede añadir agrupación de marcadores.
 
 ## Prioridades
 
-Issues abiertos por orden de prioridad (etiquetas `prioridad: alta`, `prioridad: media` y
-`prioridad: baja` en GitHub). La lista la genera `scripts/prioridades.sh`: ejecútalo al abrir,
-cerrar o reetiquetar issues.
+Las prioridades viven en las etiquetas de los issues de GitHub; aquí solo se enlazan para que no se
+desfasen:
 
-<!-- BEGIN:prioridades -->
-
-**Alta**
-1. [#5](https://github.com/motercode/myTravelsArround/issues/5) Configurar tests unitarios (Vitest) y E2E (Playwright)
-2. [#7](https://github.com/motercode/myTravelsArround/issues/7) Las fotos de álbumes de Google Fotos salen como autor «desconocido»
-3. [#8](https://github.com/motercode/myTravelsArround/issues/8) Viajes, fase 1: agrupar las fotos en viajes y filtrar el mapa por viaje
-4. [#13](https://github.com/motercode/myTravelsArround/issues/13) README al día y lista de prioridades
-
-**Media**
-5. [#9](https://github.com/motercode/myTravelsArround/issues/9) Agrupar marcadores en el mapa
-
-**Baja**
-6. [#10](https://github.com/motercode/myTravelsArround/issues/10) Viajes, fase 2: ver las fotos de un viaje como presentación
-7. [#11](https://github.com/motercode/myTravelsArround/issues/11) Viajes, fase 3: recorrido desde una foto por tiempo o distancia
-8. [#12](https://github.com/motercode/myTravelsArround/issues/12) Capas opcionales con reseñas y sitios guardados del Takeout
-
-<!-- END:prioridades -->
+- [Prioridad alta](https://github.com/motercode/myTravelsArround/issues?q=is%3Aissue+is%3Aopen+label%3A%22prioridad%3A+alta%22)
+- [Prioridad media](https://github.com/motercode/myTravelsArround/issues?q=is%3Aissue+is%3Aopen+label%3A%22prioridad%3A+media%22)
+- [Prioridad baja](https://github.com/motercode/myTravelsArround/issues?q=is%3Aissue+is%3Aopen+label%3A%22prioridad%3A+baja%22)
