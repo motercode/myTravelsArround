@@ -150,3 +150,9 @@ vite.config.ts.timestamp-*
 
 # netlify
 .netlify
+
+# evidencia local de scripts/comprobar.sh
+/.evidencia/
+
+# permisos locales de Claude Code (las skills de .claude/skills/ sí se versionan)
+/.claude/settings.local.json
