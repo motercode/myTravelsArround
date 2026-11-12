@@ -11,7 +11,7 @@ no tiene, y el día que maduren pasarán allí.
 | [adr-base.md](adr-base.md) | ConserjeCV (Android) | ADR-0002 (dónde va cada decisión), ADR-0003 (calidad antes de cada PR), ADR-0004 (tests sobre datos ficticios), registro de decisiones operativas | ADR-0001 → Next.js + TypeScript + Tailwind + Netlify; ADR-0005 (R8), ADR-0006 (Room) y ADR-0007 (solo local) no aplican |
 | [privacidad-y-logs.md](privacidad-y-logs.md) | ConserjeCV (Android) | Datos reales y secretos fuera de git (`.env*` ya está en `.gitignore`), datos ficticios para pruebas, cuidado con agentes y datos reales | `DebugLog` y R8 → nada de `console.log` con datos personales en producción; lo que lleva `NEXT_PUBLIC_` llega al navegador |
 | [tests.md](tests.md) | comparaluzcv (Next.js) | Vitest para unitarios y Playwright para E2E, con configuración y reglas | El original está en JavaScript; aquí, TypeScript |
-| [scripts.md](scripts.md) | Propia (2026-11-12) | Scripts `nuevo-cambio.sh`, `comprobar.sh`, `abrir-pr.sh` y `prioridades.sh` y la skill `ciclo-de-cambio` que automatizan el ciclo issue → rama → comprobaciones → PR y la lista de prioridades | — |
+| [scripts.md](scripts.md) | Propia (2026-11-12) | Scripts `nuevo-cambio.sh`, `comprobar.sh` y `abrir-pr.sh` y la skill `ciclo-de-cambio` que automatizan el ciclo issue → rama → comprobaciones → PR, con prioridades por etiquetas | — |
 
 No se han copiado las guías de Android de ConserjeCV (tests con Compose, capturas, adb, trampas de
 Gradle, modo UIX) ni las de Flutter de Apati Paseo-Perro.

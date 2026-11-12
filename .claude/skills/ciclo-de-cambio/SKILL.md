@@ -11,15 +11,15 @@ si un script falla o necesitas sus opciones.
 
 ## 1. Empezar
 
-- Si hay issue: `scripts/nuevo-cambio.sh -t <tipo> -s <descripcion-corta> -i <N>`.
+- Si hay issue: `scripts/nuevo-cambio.sh -t <tipo> -s <descripcion-corta> -i <N> [-p <prioridad>]`.
 - Si no: redacta el cuerpo del issue en español (contexto, alcance, fuera de alcance) en un fichero
   temporal del scratchpad y ejecuta
-  `scripts/nuevo-cambio.sh -t <tipo> -s <descripcion-corta> -T "<título>" -b <fichero>`.
+  `scripts/nuevo-cambio.sh -t <tipo> -s <descripcion-corta> -T "<título>" -b <fichero> -p <prioridad>`.
   Crear un issue es público: confírmalo con el usuario si no lo ha pedido.
 - Tipos: `feat`, `fix`, `test`, `docs`, `chore`, `refactor`. Descripción corta en español.
-- Todo issue nuevo lleva una etiqueta `prioridad: alta|media|baja` (pregunta al usuario si no está
-  claro) y después se ejecuta `scripts/prioridades.sh` para actualizar el README.
-- Para elegir el siguiente trabajo, empieza por el primero de «Prioridades» del README.
+- Todo issue lleva una etiqueta de prioridad: `-p alta|media|baja` en `nuevo-cambio.sh` (pregunta
+  al usuario si no está claro).
+- Para elegir el siguiente trabajo: `gh issue list --label "prioridad: alta"` (y luego media y baja).
 - Si es una feature, escribe o actualiza `docs/features/<feature>.md` antes del código.
 
 ## 2. Trabajar
