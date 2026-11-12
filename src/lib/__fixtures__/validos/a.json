@@ -1,0 +1,42 @@
+{
+  "total": 6,
+  "items": [
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@40.4,-3.7/data=!3m1!1sFOTO1!2e10",
+      "coordinates": {
+        "latitude": 40.4,
+        "longitude": -3.7
+      }
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@43.3,-8.4/data=!3m1!1sFOTO2!2e10",
+      "mapsUrlCanonical": "https://maps.example/foto2",
+      "imageUrl": "https://lh3.googleusercontent.com/gpms-cs-s/FICTICIA2=w900-h600-k-no-pi-4.8-ya359.9-ro359.4-fo100",
+      "coordinates": {
+        "latitude": 43.3,
+        "longitude": -8.4
+      }
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/data=!1sSINCOORDS!2e10"
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/data=!1sNULL!2e10",
+      "coordinates": null
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/data=!1sCERO!2e10",
+      "coordinates": {
+        "latitude": 0,
+        "longitude": 0
+      }
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/data=!1sFUERA!2e10",
+      "coordinates": {
+        "latitude": 95,
+        "longitude": 10
+      }
+    }
+  ]
+}

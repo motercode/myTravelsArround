@@ -30,14 +30,15 @@ function isValidPosition(lat: number, lng: number) {
  * Lee todos los JSON de data/contributions/ en tiempo de build,
  * descarta los que no tienen coordenadas válidas y elimina duplicados
  * (misma foto exportada en varias extracciones).
+ * `dataDir` solo se cambia en los tests, para leer fixtures ficticios.
  */
-export function loadContributions(): Contribution[] {
-  if (!fs.existsSync(DATA_DIR)) return [];
+export function loadContributions(dataDir: string = DATA_DIR): Contribution[] {
+  if (!fs.existsSync(dataDir)) return [];
 
   const byId = new Map<string, Contribution>();
 
-  for (const file of fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json")).sort()) {
-    const raw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf8"));
+  for (const file of fs.readdirSync(dataDir).filter((f) => f.endsWith(".json")).sort()) {
+    const raw = JSON.parse(fs.readFileSync(path.join(dataDir, file), "utf8"));
     const parsed = extractionFileSchema.safeParse(raw);
     if (!parsed.success) {
       throw new Error(`Formato no válido en data/contributions/${file}: ${parsed.error.message}`);

@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@41.4,2.2/data=!3m1!1sFOTO1!2e10",
+      "coordinates": { "latitude": 41.4, "longitude": 2.2 }
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/111111111111111111111/photos/data=!3m1!1sFOTO1!2e10",
+      "imageUrl": "https://example.com/foto.jpg",
+      "coordinates": { "latitude": 37.4, "longitude": -5.9 }
+    }
+  ]
+}
