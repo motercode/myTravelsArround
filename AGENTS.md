@@ -55,6 +55,8 @@ npm install
 npm run dev        # servidor de desarrollo en http://localhost:3030
 npm run lint       # ESLint
 npm run build      # build estático, el mismo que hace Netlify
+npm test           # unitarios (Vitest), junto al código: src/**/*.test.ts
+npm run test:e2e   # E2E (Playwright) en e2e/; arranca npm run dev si no está abierto
 scripts/comprobar.sh   # secretos, lint, build y tests; informe en .evidencia/
 ```
 

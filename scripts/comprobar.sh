@@ -35,14 +35,16 @@ sin_secretos() {
   echo "Ningún .env* en git."
 }
 
+# next build y next dev (que arrancan los E2E) reescriben next-env.d.ts con rutas distintas
+# (.next/types frente a .next/dev/types); si estaba limpio, se restaura al terminar para no dejar
+# un cambio ajeno al trabajo.
+if [[ -f next-env.d.ts ]] && git diff --quiet -- next-env.d.ts; then
+  trap 'git checkout --quiet -- next-env.d.ts' EXIT
+fi
+
 paso "Sin secretos en git" sin_secretos
 paso "npm run lint" npm run lint
-# next build reescribe next-env.d.ts (rutas .next/types frente a .next/dev/types de next dev);
-# si estaba limpio, se restaura para no dejar un cambio ajeno al trabajo.
-next_env_limpio=0
-if [[ -f next-env.d.ts ]] && git diff --quiet -- next-env.d.ts; then next_env_limpio=1; fi
 paso "npm run build" npm run build
-if [[ $next_env_limpio -eq 1 ]]; then git checkout --quiet -- next-env.d.ts; fi
 for s in test test:e2e; do
   if tiene_script_npm "$s"; then
     paso "npm run $s" npm run "$s"

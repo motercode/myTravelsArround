@@ -7,7 +7,7 @@ Son genéricos: sirven en cualquier web Next.js + Netlify con `gh` autenticado, 
 |---|---|
 | `scripts/nuevo-cambio.sh` | Pone `main` al día, crea el issue (o usa uno existente) y la rama `tipo/issue-N-descripcion` |
 | `scripts/comprobar.sh` | Comprueba que no hay `.env*` en git, ejecuta lint, build y, si existen los scripts npm `test` y `test:e2e`, los tests. Guarda la salida en `.evidencia/comprobaciones.md` (no versionado) |
-| `scripts/abrir-pr.sh` | Sube la rama y abre el PR con la plantilla rellenada: `Closes #N`, los cambios, las casillas de lint, build y tests según el informe, y el informe como evidencia |
+| `scripts/abrir-pr.sh` | Sube la rama y abre el PR con la plantilla rellenada: `Closes #N`, los cambios, las casillas de lint, build y tests según el informe, las que se indiquen con `-x` y el informe como evidencia. Si la rama ya tiene un PR abierto, lo actualiza |
 | `scripts/lib/comun.sh` | Funciones compartidas |
 | `.claude/skills/ciclo-de-cambio/` | Skill de Claude Code que guía al agente por el ciclo usando estos scripts |
 
@@ -19,7 +19,9 @@ scripts/nuevo-cambio.sh -t fix -s fecha-duplicada -i 31                         
 scripts/comprobar.sh
 git commit -m "fix(orders): stop creating a duplicate order on double tap (#31)"
 scripts/comprobar.sh                     # el informe tiene que ser del último commit
-scripts/abrir-pr.sh -T "fix(orders): no se duplica el pedido (#31)" -c cambios.md
+scripts/abrir-pr.sh -T "fix(orders): no se duplica el pedido (#31)" -c cambios.md \
+  -x "Ningún secreto" -x "separado del negocio"   # casillas revisadas a mano
+# tras más commits: comprobar.sh y el mismo abrir-pr.sh actualizan el PR
 ```
 
 ## Por qué así
@@ -29,5 +31,10 @@ scripts/abrir-pr.sh -T "fix(orders): no se duplica el pedido (#31)" -c cambios.m
 - `comprobar.sh` sigue tras un fallo para mostrar todos los problemas de una vez.
 - `next dev` (Next.js 16) reescribe su bloque en `AGENTS.md`; `comprobar.sh` avisa para que entre en
   el commit en lugar de quedarse como cambio pendiente.
-- Las casillas que dependen de criterio (especificación, prueba en `npm run dev`, plantilla o
-  negocio) no se marcan solas.
+- Las casillas que dependen de criterio (especificación, prueba en `npm run dev`, secretos,
+  plantilla o negocio) no se marcan solas: se marcan con `-x` después de revisarlas, y el script
+  falla si el texto no coincide con ninguna casilla.
+- `nuevo-cambio.sh` crea la rama desde `origin/main` sin pasar por el `main` local, para no fallar
+  con cambios sin commit.
+- `comprobar.sh` deja `next-env.d.ts` como estaba: `next build` y `next dev` (que arrancan los E2E)
+  lo reescriben con rutas distintas.

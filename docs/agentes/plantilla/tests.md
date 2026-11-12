@@ -1,7 +1,7 @@
 # Tests en Next.js: Vitest y Playwright
 
 Guía extraída de comparaluzcv, el único proyecto Next.js de motercode con tests. Allí está escrito
-en JavaScript (`*.config.mjs`/`.js`); en un proyecto TypeScript se usan las mismas ideas con `.ts`.
+en JavaScript (`*.config.mjs`/`.js`); en un proyecto TypeScript se usan las mismas ideas con `.ts`/`.mts`.
 
 ## Tipos y dónde viven
 
@@ -26,7 +26,7 @@ Scripts en `package.json`:
 
 ## Configuración
 
-`vitest.config.ts`: entorno `node` y el mismo alias `@` que `tsconfig.json`, para importar como en
+`vitest.config.mts`: entorno `node` y el mismo alias `@` que `tsconfig.json`, para importar como en
 el código.
 
 ```ts
@@ -50,15 +50,24 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
-  use: { baseURL: 'http://127.0.0.1:3000', headless: true, trace: 'on-first-retry' },
+  use: { baseURL: 'http://localhost:3000', headless: true, trace: 'on-first-retry' },
   webServer: {
     command: 'npm run dev',
-    url: 'http://127.0.0.1:3000',
+    url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120_000,
   },
 });
 ```
+
+**`localhost`, no `127.0.0.1`.** Next.js 16 bloquea en `next dev` los recursos de desarrollo
+(`/_next/…`, HMR) pedidos desde un origen distinto de `localhost` («Blocked cross-origin request» en
+el log). Con `127.0.0.1` la página se sirve, pero no se hidrata: los clics cambian el DOM y no el
+estado, y los componentes solo de cliente no aparecen. Si hace falta otro host, va en
+`allowedDevOrigins` de `next.config.ts`.
+
+Next.js 16 también es un proyecto CommonJS por defecto: la configuración de Vitest va en
+`vitest.config.mts` para que no avise de sintaxis ESM.
 
 ## Reglas
 
@@ -66,6 +75,8 @@ export default defineConfig({
   Los tests sobreviven a los cambios de estilo y comprueban de paso la accesibilidad.
 - **Comprobar que no hay duplicados** con `toHaveCount(1)` en los bloques principales: detecta
   componentes que se pintan dos veces.
+- **Esperar a la hidratación** antes de interactuar: espera a algo que solo pinta el cliente (en
+  myTravelsArround, el control de zoom del mapa). Un clic antes cambia el DOM pero no el estado.
 - **Un E2E por recorrido**: entrar, navegar a un detalle y comprobar lo que se ve allí.
 - **Datos de prueba ficticios** y deterministas; los datos reales no entran en los fixtures
   (ver [privacidad-y-logs.md](privacidad-y-logs.md)).

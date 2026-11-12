@@ -23,10 +23,15 @@ cd "$RAIZ"
 # Los cambios sin commit viajan a la rama nueva; se avisa para que sea a propósito.
 [[ -z "$(git status --porcelain)" ]] || info "hay cambios sin commit: pasarán a la rama nueva"
 
+# La rama sale de origin/main y no del main local: así no hace falta cambiar a main (que fallaría
+# con cambios sin commit en ficheros que el main local aún no tiene).
 info "actualizando main"
 git fetch origin main --quiet
-git switch main --quiet
-git merge --ff-only origin/main --quiet
+if [[ "$(git branch --show-current)" == "main" ]]; then
+  git merge --ff-only origin/main --quiet
+else
+  git fetch origin main:main --quiet || info "main local divergente de origin/main: no se actualiza"
+fi
 
 if [[ -z "$issue" ]]; then
   args=(--title "$titulo")
@@ -37,5 +42,5 @@ if [[ -z "$issue" ]]; then
 fi
 
 rama="$tipo/issue-$issue-$slug"
-git switch -c "$rama"
+git switch --quiet --no-track -c "$rama" origin/main
 info "rama $rama lista. Siguiente: código, scripts/comprobar.sh y scripts/abrir-pr.sh"

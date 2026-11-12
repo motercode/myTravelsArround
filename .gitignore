@@ -156,3 +156,8 @@ vite.config.ts.timestamp-*
 
 # permisos locales de Claude Code (las skills de .claude/skills/ sí se versionan)
 /.claude/settings.local.json
+
+# resultados de Playwright
+/test-results/
+/playwright-report/
+/blob-report/

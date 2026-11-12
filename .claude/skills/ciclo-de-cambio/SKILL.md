@@ -38,7 +38,11 @@ si un script falla o necesitas sus opciones.
 ## 4. Abrir el PR
 
 1. Escribe en un fichero del scratchpad la sección «Cambios» en español: qué y por qué, en viñetas.
-2. `scripts/abrir-pr.sh -T "<tipo>(<ámbito>): título en español (#N)" -c <fichero>` (`-d` para borrador).
-3. Revisa en el PR las casillas que el script no marca (especificación, `npm run dev`, secretos,
-   plantilla o negocio) y márcalas solo si es cierto.
-4. Da al usuario el enlace del PR.
+2. Revisa las casillas que el script no marca solo (especificación, `npm run dev`, secretos,
+   plantilla o negocio). Para cada una que sea cierta, pasa `-x "<texto de la casilla>"`; si no
+   aplica, dilo en «Cambios».
+3. `scripts/abrir-pr.sh -T "<tipo>(<ámbito>): título en español (#N)" -c <fichero> -x "Ningún secreto" -x "separado del negocio"`
+   (`-d` para borrador).
+4. Tras nuevos commits en la rama: `scripts/comprobar.sh` y el mismo `abrir-pr.sh`, que actualiza
+   el PR abierto con la evidencia nueva.
+5. Da al usuario el enlace del PR.
