@@ -4,8 +4,14 @@ Especificación para implementar la feature **viajes** en myTravelsArround. Est�
 agente que no conoce el proyecto: primero el contexto, después lo que ya está hecho, lo que hay
 que hacer (por fases), las reglas exactas y los criterios para dar cada fase por terminada.
 
-Estado a 2026-11-14: solo especificación, no hay código de esta feature. Decisiones de la fase 1
-tomadas (sección 7).
+Estado a 2026-11-14: **fase 1 implementada** (#8). Fases 2 y 3, solo especificación.
+
+Diferencias de la implementación con la propuesta de 4.3:
+
+- El navegador no recibe `Trip.photoIds` ni las fechas de las fotos: `tripsForPage`
+  (`src/lib/trips.ts`) pone `tripId` a cada foto y pasa a la página un resumen de cada viaje
+  (`TripSummary`, con `dayCount` y `photoCount`).
+- La `Polyline` opcional del punto 5 no se ha hecho; queda para la fase 2.
 
 ## 1. Objetivo
 

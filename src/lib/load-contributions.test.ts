@@ -62,6 +62,23 @@ describe("loadContributions", () => {
     expect(loadContributions(path.join(FIXTURES, "validos"), path.join(FIXTURES, "no-existe"))).toEqual(contributions);
   });
 
+  it("lee la fecha de la foto y su origen", () => {
+    expect(porId("testA:FOTO2")).toMatchObject({ takenAt: "2020-09-30T07:05:27", takenAtSource: "exif" });
+  });
+
+  it("una copia sin fecha no quita la fecha de la copia anterior", () => {
+    expect(porId("testA:FOTO2")).toMatchObject({ lat: 43.3, takenAt: "2020-09-30T07:05:27" });
+  });
+
+  it("ignora una fecha con formato raro sin romper el build", () => {
+    expect(porId("testA:FOTO1")?.takenAt).toBeUndefined();
+  });
+
+  it("conserva la fecha aunque su origen sea desconocido, sin el origen", () => {
+    expect(porId("motercode:FOTOALBUM1")).toMatchObject({ takenAt: "2018-09-21T13:07:41" });
+    expect(porId("motercode:FOTOALBUM1")?.takenAtSource).toBeUndefined();
+  });
+
   it("devuelve una lista vacía si no existe el directorio", () => {
     expect(loadContributions(path.join(FIXTURES, "no-existe"))).toEqual([]);
   });
