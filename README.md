@@ -139,6 +139,12 @@ Por eso existe `contribExtraction`. Recorre el perfil público en un navegador C
 - **Por qué no `public/`.** Ahí se publicaría el JSON en bruto, y para el mapa solo hacen falta unos pocos campos por foto.
 - **Validación con zod.** Si cambia el formato del extractor, el build falla con un error claro en lugar de dibujar un mapa vacío.
 
+### Administración solo en local, en `data/admin/`
+
+- **Sin administración remota.** Lo que se decide a mano (autor de fotos concretas, nombres de viaje, ajustes, posiciones deducidas de los tracks) se edita con un panel local (`npm run admin`, en `localhost`) que no forma parte del build. Nada de lo publicado se puede cambiar desde internet ni por descuido: un cambio solo llega a la web por commit, PR y merge, y el panel se niega a guardar en `main`.
+- **Aparte de `data/contributions/`.** Lo administrado va en `data/admin/`, y el build lo aplica encima de lo exportado. Así una reexportación de `contribExtraction` no borra nada de lo decidido a mano.
+- Detalle en [docs/features/panel-admin.md](docs/features/panel-admin.md) (#32).
+
 ### Proceso: issues, prioridades y PR con evidencia
 
 - Cada cambio sale de un issue y llega por PR con la plantilla de `.github/pull_request_template.md`

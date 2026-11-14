@@ -15,11 +15,12 @@ a cada hora. La herramienta:
 1. **Prepara los tracks** (fase 1): descomprime, lee todos los formatos, quita duplicados y ordena.
 2. **Cruza fotos y tracks** (fase 2): propone una posición para cada foto con su fiabilidad y
    acepta sola las que llegan al 95 %.
-3. **Revisión manual en un mapa local** (fase 3): lo que no llega al 95 % se decide a mano.
+3. **Revisión manual en un mapa local** (fase 3): lo que no llega al 95 % se decide a mano. Es la
+   sección **Posiciones** del panel de administración local ([panel-admin.md](panel-admin.md)).
 
 La herramienta **se lanza a mano en local**. No forma parte de `npm run build` ni de Netlify, y la
 web publicada sigue siendo estática (regla 1 de `AGENTS.md`): solo lee el resultado que la
-herramienta deja en `data/contributions/`.
+herramienta deja en `data/admin/posiciones.json`.
 
 ## 2. Contexto
 
@@ -58,7 +59,7 @@ Ruido que hay que ignorar: `josm.jnlp`, `*.desktop`, `*.qgz`, `DumpStack.log.tmp
   repositorio y no se publican. Los ficheros intermedios de la herramienta van en
   `../tracks/procesado/`, también fuera del repositorio.
 - Lo único que se publica es la coordenada final de fotos que **ya son públicas**, en el campo
-  `trackMatch` (sección 7). `trackMatch` no lleva puntos del track ni nada que permita
+  `trackMatch` de `data/admin/posiciones.json` (sección 7). `trackMatch` no lleva puntos del track ni nada que permita
   reconstruirlo.
 - Impedir que entren ficheros de tracks en el repositorio (`*.gpx`, `*.kml`, `*.kmz`, `*.gpkg`)
   con una comprobación en `scripts/comprobar.sh`: pendiente de pensar en #25.
@@ -188,13 +189,13 @@ confirmada y no se escribe `trackMatch`.
 - Un cambio de `timeOffsetSeconds` recalcula las `auto`/`pending` de ese track y deja las
   `manual`/`discarded`.
 - Repetir el cruce sin cambios no modifica ningún fichero.
-- `npm run build` usa `trackMatch` (sección 7.2) y pasa con ficheros con y sin el campo.
+- `npm run build` usa `data/admin/posiciones.json` (sección 7.2) y pasa con y sin el fichero.
 
 ## 6. Fase 3: revisión manual en un mapa local
 
-Comando: `npm run tracks:revisar`. Levanta un servidor local en `http://localhost:3040`
-(`node:http`, solo escucha en `localhost`) que sirve una página con Leaflet (ya está en el
-proyecto) y una pequeña API para leer las fotos `pending` y guardar decisiones.
+Es la sección **Posiciones** del panel de administración local (`npm run admin`,
+[panel-admin.md](panel-admin.md)): usa su servidor, su mapa común (popup con la imagen, capas
+satélite e iconográfica) y su guardado seguro (no guarda en `main`).
 
 - **Lista** de fotos `pending` ordenadas por hora, con filtro por track.
 - El **icono** de la foto aparece en P, la posición deducida. Se dibujan también el track
@@ -202,15 +203,11 @@ proyecto) y una pequeña API para leer las fotos `pending` y guardar decisiones.
 - **Arrastrar** el icono al sitio correcto y **Aceptar** → `status: "manual"` con la posición
   nueva. Aceptar sin mover → `manual` con P.
 - **Descartar** → `status: "discarded"`.
-- **Ver la imagen** en un popup (`imageUrl` a tamaño grande, como en la fase 2 de viajes) para
-  comprobarla.
-- **Capas**: satélite (Esri World Imagery) e iconográfica (OpenStreetMap), con el control de capas
-  de Leaflet.
+- **Ver la imagen** en el popup del mapa común para comprobarla.
 - **Ajustes del track** (zona horaria y desfase) desde la página, con recálculo y aviso como en la
   sección 5.4.
 - **Hora inicial** de los tracks sin hora (sección 4.1): aceptar la propuesta o escribir otra.
-- Cada decisión se escribe al momento en el `data/contributions/*.json` de la foto, sin reordenar
-  ni reformatear el resto del fichero, para que el diff de git sea pequeño.
+- Cada decisión se escribe al momento en `data/admin/posiciones.json`.
 
 ### 6.1 Fotos huérfanas de hora
 
@@ -229,16 +226,20 @@ QGIS sobre un GeoJSON exportado y reimportado. No es el plan por defecto.
 
 ### Criterios de aceptación (fase 3)
 
-- Arrastrar, aceptar y descartar escriben lo esperado en el JSON y la foto sale de la lista.
+- Arrastrar, aceptar y descartar escriben lo esperado en `data/admin/posiciones.json` y la foto
+  sale de la lista.
 - Una huérfana de hora se puede desplazar por el track de su día y aceptar.
 - Las dos capas se pueden cambiar y el popup muestra la imagen.
 - E2E con Playwright sobre datos ficticios: aceptar una foto movida y descartar otra.
 
-## 7. Salida: campo `trackMatch`
+## 7. Salida: `trackMatch` en `data/admin/posiciones.json`
 
 ### 7.1 Formato
 
-En cada item de `data/contributions/`, junto a los campos que ya hay:
+Un `trackMatch` por foto, en `data/admin/posiciones.json`, con el id de la foto como clave
+(formato del fichero e id en [panel-admin.md](panel-admin.md), sección 2). **No** va dentro de
+`data/contributions/`: así una reexportación de contribExtraction no lo borra (#31).
+`coordinates` de `data/contributions/` sigue siendo la posición original.
 
 ```json
 "trackMatch": {
@@ -263,21 +264,22 @@ En cada item de `data/contributions/`, junto a los campos que ya hay:
 
 ### 7.2 Cómo lo usa la web
 
-En `src/lib/load-contributions.ts`:
+En `src/lib/load-contributions.ts`, con la lógica común de `data/admin/` (panel-admin.md,
+sección 2.3):
 
 - `auto` o `manual` → se pinta en `trackMatch.coordinates`, **aunque `coordinates` falte o sea
   `0,0`** (así entran las fotos que hoy se descartan).
 - `discarded` → no se pinta.
 - `pending` o sin `trackMatch` → `coordinates`, como hoy.
-- El esquema zod admite `trackMatch` opcional; si no es válido, se ignora el campo (la foto queda
-  como sin él) en vez de romper el build.
+- Lo valida zod. El fichero lo escribe la herramienta, así que un formato no válido hace fallar el
+  build con el nombre del fichero; un id que ya no existe se ignora.
 - La web **no distingue** las posiciones deducidas: se pintan igual que las demás.
 
 ## 8. Dónde va el código
 
-- `tools/tracks/`: lectores, cruce, servidor y página de revisión. Es negocio de este proyecto (no
-  va a la plantilla, regla 6).
-- `npm run tracks:preparar`, `tracks:cruzar` y `tracks:revisar` en `package.json`. TypeScript
+- `tools/tracks/`: lectores y cruce. La revisión es la sección Posiciones de `tools/admin/`. Es
+  negocio de este proyecto (no va a la plantilla, regla 6).
+- `npm run tracks:preparar` y `tracks:cruzar` en `package.json`; la revisión, con `npm run admin`. TypeScript
   ejecutado con Node 22 (`--experimental-strip-types`) para no añadir dependencias.
 - La lógica pura (fiabilidad, interpolación, horas) va en ficheros sin dependencias de Node ni del
   navegador, con tests unitarios de Vitest junto al código.
@@ -295,6 +297,9 @@ Tomadas (2026-11-14):
 5. Los tracks se simplifican a un punto cada 5 minutos como mínimo y se parten en trozos de 4 h.
 6. Los tracks sin hora se incluyen con una hora inicial propuesta.
 7. Las fotos sin hora quedan como huérfanas y se colocan a mano sobre el track de su día.
+8. `trackMatch` va en `data/admin/posiciones.json`, no dentro de `data/contributions/` (cambia la
+   decisión anterior, para que una reexportación no lo borre, #31). La revisión es una sección del
+   panel de administración local (#32).
 
 Pendientes:
 
