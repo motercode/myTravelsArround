@@ -7,7 +7,7 @@ Son genéricos: sirven en cualquier web Next.js + Netlify con `gh` autenticado, 
 |---|---|
 | `scripts/nuevo-cambio.sh` | Pone `main` al día, crea el issue (o usa uno existente), le pone la etiqueta de prioridad con `-p` y crea la rama `tipo/issue-N-descripcion` |
 | `scripts/comprobar.sh` | Comprueba que no hay `.env*` en git ni secretos en los ficheros cambiados respecto a `origin/main` (tokens de GitHub, claves de AWS, claves privadas, asignaciones de claves de API), que las piezas de plantilla no nombran el negocio, y ejecuta lint, build y, si existen los scripts npm `test` y `test:e2e`, los tests. Guarda la salida en `.evidencia/comprobaciones.md` (no versionado) |
-| `scripts/abrir-pr.sh` | Sube la rama y abre el PR con la plantilla rellenada: `Closes #N`, los cambios, las casillas de lint, build y tests según el informe, las que se indiquen con `-x` y el informe como evidencia. Si la rama ya tiene un PR abierto, lo actualiza |
+| `scripts/abrir-pr.sh` | Sube la rama y abre el PR con la plantilla rellenada: `Closes #N` (o `Refs #N` con `-r`, si el PR no cierra el issue), los cambios, las casillas de lint, build y tests según el informe, las que se indiquen con `-x` y el informe como evidencia. Si la rama ya tiene un PR abierto, lo actualiza |
 | `scripts/cerrar-cambio.sh` | Tras el merge: comprueba que el PR está mergeado, pone `main` al día, borra la rama local y la remota si sigue, y lista los issues de prioridad alta |
 | `scripts/lib/comun.sh` | Funciones compartidas; carga `scripts/proyecto.env` si existe |
 | `scripts/proyecto.env` | **Negocio, no plantilla.** Configuración del proyecto: `TERMINOS_NEGOCIO`, `PLANTILLA_RUTAS` y `PLANTILLA_EXCLUIR` para la regla 6 |
@@ -24,6 +24,7 @@ scripts/comprobar.sh                     # el informe tiene que ser del último 
 scripts/abrir-pr.sh -T "fix(orders): no se duplica el pedido (#31)" -c cambios.md \
   -x "Ningún secreto" -x "separado del negocio"   # casillas revisadas a mano
 # tras más commits: comprobar.sh y el mismo abrir-pr.sh actualizan el PR
+scripts/abrir-pr.sh -r -T "docs(features): especificación de pedidos (#40)" -c cambios.md  # no cierra #40
 scripts/cerrar-cambio.sh               # tras el merge, desde la rama del cambio
 ```
 
