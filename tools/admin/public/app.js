@@ -8,7 +8,14 @@ const fotos = new Map(); // id → { id, lat, lng, autor, url, miniatura, marcad
 const seleccion = new Set();
 const colorDe = new Map();
 
-const mapa = L.map("mapa", { preferCanvas: true }).setView([40.4, -3.7], 5);
+// Zona de clic: el punto mide 4 px de radio; con 4 px más de tolerancia el radio efectivo es el
+// doble y el área, 4 veces, sin que el punto se vea más grande.
+const mapa = L.map("mapa", { renderer: L.canvas({ tolerance: 4 }) }).setView([40.4, -3.7], 5);
+
+// Leaflet solo mide el contenedor al crearse y al redimensionar la ventana. El aviso de arriba
+// aparece después de cargar el estado y cambia la altura del mapa: sin esto, Chrome deja sin
+// pintar la franja de abajo hasta el siguiente cambio de tamaño de la ventana.
+new ResizeObserver(() => mapa.invalidateSize()).observe(document.getElementById("mapa"));
 const capas = {
   Iconográfica: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
