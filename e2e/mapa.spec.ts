@@ -77,3 +77,41 @@ test("las fotos salen agrupadas y al pulsar un grupo el mapa se acerca", async (
   await grupos.first().click();
   await expect.poll(zoom, { timeout: 10_000 }).toBeGreaterThan(antes);
 });
+
+test("una foto suelta carga su miniatura al pasar el ratón y el clic la abre en Google", async ({ page }) => {
+  await page.goto("/");
+  await esperarMapa(page);
+  // Un viaje pequeño encuadrado deja fotos sueltas, sin agrupar.
+  await page.getByRole("button", { name: /Viajes: todas las fotos/ }).click();
+  await page.locator("#lista-viajes details").first().getByRole("button").first().click();
+  await page.waitForTimeout(1500);
+
+  // Centro aproximado de un punto suelto: primer píxel azul del canvas del mapa.
+  const punto = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>(".leaflet-overlay-pane canvas");
+    if (!canvas) return null;
+    const r = canvas.getBoundingClientRect();
+    const escala = r.width / canvas.width;
+    const datos = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+    for (let y = 0; y < canvas.height; y += 2) {
+      for (let x = 0; x < canvas.width; x += 2) {
+        const i = (y * canvas.width + x) * 4;
+        const px = r.left + x * escala;
+        const py = r.top + y * escala;
+        const libre = px > 360 && px < innerWidth - 20 && py > 20 && py < innerHeight - 20;
+        if (libre && datos[i] < 80 && datos[i + 2] > 200 && datos[i + 3] > 200) return { x: px, y: py + 4 };
+      }
+    }
+    return null;
+  });
+  expect(punto).not.toBeNull();
+  await page.mouse.move(punto!.x, punto!.y);
+  await expect(page.locator(".leaflet-tooltip img")).toBeVisible({ timeout: 10_000 });
+
+  // El clic abre la foto en Google (Maps o el álbum de Fotos). Se corta la petición para no salir
+  // a internet: basta con ver adónde va.
+  await page.context().route(/google\.com/, (ruta) => ruta.abort());
+  const peticion = page.context().waitForEvent("request", (r) => /google\.com\/(maps|share)|photos\.google\.com/.test(r.url()));
+  await page.mouse.click(punto!.x, punto!.y);
+  expect((await peticion).url()).toMatch(/^https:\/\/(www\.google\.com\/maps|photos\.google\.com\/share)\//);
+});

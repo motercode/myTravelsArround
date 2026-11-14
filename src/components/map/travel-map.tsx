@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { canvas, divIcon, type LatLngBoundsExpression, type Map as LeafletMap } from "leaflet";
 import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import { buildClusterIndex, clusterBBox, clusterSize, type PointProps } from "@/lib/clusters";
-import type { Contribution } from "@/lib/contributions";
+import { chunkOf, type MapPhoto } from "@/lib/map-data";
+import { detailsOf, loadChunk, useDetails } from "./photo-details";
 
 const SPAIN_BOUNDS: LatLngBoundsExpression = [
   [36, -9.5],
@@ -26,7 +27,7 @@ const MARKER_STYLE = {
   fillOpacity: 0.9,
 };
 
-function initialBounds(points: Contribution[]): LatLngBoundsExpression {
+function initialBounds(points: MapPhoto[]): LatLngBoundsExpression {
   if (points.length === 0) return SPAIN_BOUNDS;
   const lats = points.map((p) => p.lat);
   const lngs = points.map((p) => p.lng);
@@ -54,12 +55,38 @@ function viewOf(map: LeafletMap) {
 }
 
 // Solo dibuja los grupos y las fotos del área visible; se recalcula al terminar de mover el mapa.
-function ClusteredMarkers({ contributions }: { contributions: Contribution[] }) {
+// Abre la foto. Si su bloque de detalles aún no ha llegado, abre la pestaña ya (dentro del clic,
+// para que el navegador no la bloquee) y la lleva a la foto cuando llega.
+function openPhoto(photo: MapPhoto) {
+  const ready = detailsOf(photo.index);
+  if (ready) {
+    window.open(ready.url, "_blank", "noopener,noreferrer");
+    return;
+  }
+  const tab = window.open("about:blank", "_blank");
+  if (!tab) return;
+  tab.opener = null;
+  loadChunk(chunkOf(photo.index))
+    .then(() => {
+      const details = detailsOf(photo.index);
+      if (details) tab.location.href = details.url;
+      else tab.close();
+    })
+    .catch(() => tab.close());
+}
+
+function ClusteredMarkers({ photos }: { photos: MapPhoto[] }) {
   const map = useMap();
-  const index = useMemo(() => buildClusterIndex(contributions), [contributions]);
+  const index = useMemo(() => buildClusterIndex(photos), [photos]);
   const [view, setView] = useState(() => viewOf(map));
   useMapEvents({ moveend: () => setView(viewOf(map)) });
   const features = useMemo(() => index.getClusters(view.bbox, view.zoom), [index, view]);
+  // Las fotos sueltas visibles necesitan sus URL (miniatura y clic): se piden sus bloques.
+  const loose = useMemo(
+    () => features.filter((f) => !("cluster" in f.properties)).map((f) => photos[(f.properties as PointProps).index].index),
+    [features, photos],
+  );
+  useDetails(loose);
 
   return features.map((feature) => {
     const [lng, lat] = feature.geometry.coordinates;
@@ -78,24 +105,27 @@ function ClusteredMarkers({ contributions }: { contributions: Contribution[] }) 
         </Marker>
       );
     }
-    const c = contributions[(feature.properties as PointProps).index];
+    const photo = photos[(feature.properties as PointProps).index];
+    const details = detailsOf(photo.index);
     return (
       <CircleMarker
-        key={c.id}
-        center={[c.lat, c.lng]}
+        key={photo.index}
+        center={[photo.lat, photo.lng]}
         radius={MARKER_RADIUS}
         pathOptions={MARKER_STYLE}
-        eventHandlers={{
-          click: () => window.open(c.mapsUrl, "_blank", "noopener,noreferrer"),
-        }}
+        eventHandlers={{ click: () => openPhoto(photo) }}
       >
         <Tooltip direction="top" offset={[0, -6]}>
           <div className="flex w-48 flex-col gap-1">
-            {c.imageUrl && (
+            {details?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={c.imageUrl} alt="" className="h-28 w-48 rounded object-cover" loading="lazy" />
+              <img src={details.imageUrl} alt="" className="h-28 w-48 rounded object-cover" loading="lazy" />
+            ) : (
+              <div className="flex h-28 w-48 items-center justify-center rounded bg-neutral-100 text-[10px] text-neutral-500">
+                {details ? "Sin miniatura" : "Cargando…"}
+              </div>
             )}
-            <span className="text-xs font-medium">{c.author}</span>
+            <span className="text-xs font-medium">{photo.author}</span>
             <span className="text-[10px] text-neutral-500">Clic para abrir en Google Maps</span>
           </div>
         </Tooltip>
@@ -105,15 +135,18 @@ function ClusteredMarkers({ contributions }: { contributions: Contribution[] }) 
 }
 
 export default function TravelMap({
-  contributions,
+  photos,
+  initial,
   onReady,
 }: {
-  contributions: Contribution[];
+  photos: MapPhoto[];
+  // Todas las fotos, para el encuadre inicial (no cambia al filtrar).
+  initial: MapPhoto[];
   onReady: (map: LeafletMap) => void;
 }) {
   return (
     <MapContainer
-      bounds={initialBounds(contributions)}
+      bounds={initialBounds(initial)}
       boundsOptions={{ padding: [40, 40], maxZoom: 15 }}
       renderer={RENDERER}
       worldCopyJump
@@ -127,7 +160,7 @@ export default function TravelMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
-      <ClusteredMarkers contributions={contributions} />
+      <ClusteredMarkers photos={photos} />
     </MapContainer>
   );
 }

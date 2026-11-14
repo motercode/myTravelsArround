@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import type { Map as LeafletMap } from "leaflet";
 import { Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Contribution } from "@/lib/contributions";
+import { photosFromBase, type MapBase, type MapPhoto } from "@/lib/map-data";
 import type { TripSummary } from "@/lib/trips";
 import { TripPicker } from "./trip-picker";
 
@@ -27,8 +27,25 @@ type SearchResult = {
   boundingbox: [string, string, string, string];
 };
 
-export function MapView({ contributions, trips }: { contributions: Contribution[]; trips: TripSummary[] }) {
+const NO_PHOTOS: MapPhoto[] = [];
+
+export function MapView({ trips }: { trips: TripSummary[] }) {
   const [map, setMap] = useState<LeafletMap | null>(null);
+
+  // Las fotos llegan aparte, en /datos/base.json (generado en el build): la página no las lleva
+  // dentro (#42).
+  const [loaded, setLoaded] = useState<MapPhoto[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  useEffect(() => {
+    fetch("/datos/base.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<MapBase>;
+      })
+      .then((base) => setLoaded(photosFromBase(base)))
+      .catch(() => setLoadError(true));
+  }, []);
+  const contributions = loaded ?? NO_PHOTOS;
 
   const authors = useMemo(() => {
     const counts = new Map<string, number>();
@@ -106,7 +123,13 @@ export function MapView({ contributions, trips }: { contributions: Contribution[
 
   return (
     <div className="relative h-dvh w-full">
-      <TravelMap contributions={visible} onReady={setMap} />
+      {loaded ? (
+        <TravelMap photos={visible} initial={loaded} onReady={setMap} />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          {loadError ? "No se han podido cargar las fotos. Recarga la página." : <Loader2 className="size-6 animate-spin" />}
+        </div>
+      )}
 
       <div className="absolute left-3 right-3 top-3 z-[1000] flex flex-col gap-2 sm:right-auto sm:w-80">
         <div className="rounded-lg border bg-card/95 p-3 shadow-lg backdrop-blur">
