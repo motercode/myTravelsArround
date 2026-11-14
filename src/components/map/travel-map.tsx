@@ -1,7 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import type { LatLngBoundsExpression, Map as LeafletMap } from "leaflet";
+import { canvas, type LatLngBoundsExpression, type Map as LeafletMap } from "leaflet";
 import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
 import type { Contribution } from "@/lib/contributions";
 
@@ -9,6 +9,13 @@ const SPAIN_BOUNDS: LatLngBoundsExpression = [
   [36, -9.5],
   [43.8, 3.4],
 ];
+
+const MARKER_RADIUS = 7;
+
+// Zona de clic y de tooltip: con una tolerancia igual al radio, el radio efectivo es el doble y el
+// área, 4 veces (#37), sin que los puntos se vean más grandes. Este componente solo se carga en el
+// navegador (sin SSR), así que se puede crear el renderer aquí.
+const RENDERER = canvas({ tolerance: MARKER_RADIUS });
 
 const MARKER_STYLE = {
   color: "#ffffff",
@@ -38,7 +45,7 @@ export default function TravelMap({
     <MapContainer
       bounds={initialBounds(contributions)}
       boundsOptions={{ padding: [40, 40], maxZoom: 15 }}
-      preferCanvas
+      renderer={RENDERER}
       worldCopyJump
       className="h-full w-full"
       ref={(map) => {
@@ -54,7 +61,7 @@ export default function TravelMap({
         <CircleMarker
           key={c.id}
           center={[c.lat, c.lng]}
-          radius={7}
+          radius={MARKER_RADIUS}
           pathOptions={MARKER_STYLE}
           eventHandlers={{
             click: () => window.open(c.mapsUrl, "_blank", "noopener,noreferrer"),
