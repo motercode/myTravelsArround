@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Administración · myTravelsArround</title>
+    <link rel="stylesheet" href="/leaflet/leaflet.css" />
+    <style>
+      :root {
+        --fondo: #f6f7f9;
+        --panel: #ffffff;
+        --texto: #1d2430;
+        --suave: #5b6576;
+        --borde: #d9dee6;
+        --acento: #1f6feb;
+        --peligro: #c62828;
+        --peligro-fondo: #fdecea;
+        --aviso-fondo: #fff8e1;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; font: 14px/1.4 system-ui, sans-serif; color: var(--texto); background: var(--fondo); }
+      body { display: grid; grid-template-rows: auto auto 1fr; }
+      header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--borde); }
+      header h1 { font-size: 16px; margin: 0; }
+      .rama { font-family: ui-monospace, monospace; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--fondo); border: 1px solid var(--borde); }
+      nav { display: flex; gap: 4px; margin-left: auto; }
+      nav button { border: 1px solid var(--borde); background: var(--panel); padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+      nav button[aria-selected="true"] { background: var(--acento); color: #fff; border-color: var(--acento); }
+      nav button:disabled { opacity: 0.5; cursor: not-allowed; }
+      #aviso { padding: 8px 16px; display: none; }
+      #aviso.peligro { display: block; background: var(--peligro-fondo); color: var(--peligro); }
+      #aviso.cambios { display: block; background: var(--aviso-fondo); }
+      main { display: grid; grid-template-columns: 340px 1fr; min-height: 0; }
+      aside { overflow: auto; padding: 12px 16px; background: var(--panel); border-right: 1px solid var(--borde); }
+      aside h2 { font-size: 14px; margin: 16px 0 6px; }
+      aside h2:first-child { margin-top: 0; }
+      #mapa { min-height: 0; }
+      .fila { display: flex; gap: 6px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
+      button.accion { border: 1px solid var(--borde); background: var(--panel); padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+      button.accion.principal { background: var(--acento); color: #fff; border-color: var(--acento); }
+      button.accion:disabled { opacity: 0.5; cursor: not-allowed; }
+      button.accion[aria-pressed="true"] { outline: 2px solid var(--acento); }
+      input, select { padding: 5px 8px; border: 1px solid var(--borde); border-radius: 6px; font: inherit; min-width: 0; }
+      input { flex: 1; }
+      ul { list-style: none; margin: 0; padding: 0; }
+      li { padding: 2px 0; }
+      .muestra { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+      .id { font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; }
+      .enlace { color: var(--acento); cursor: pointer; background: none; border: 0; padding: 0; font: inherit; text-align: left; }
+      .nota { color: var(--suave); font-size: 12px; }
+      #mensaje { min-height: 1.4em; font-size: 12px; }
+      #mensaje.error { color: var(--peligro); }
+      .popup img { display: block; width: 320px; max-width: 70vw; height: auto; margin-bottom: 6px; border-radius: 4px; background: var(--fondo); }
+      @media (max-width: 760px) {
+        main { grid-template-columns: 1fr; grid-template-rows: auto 60vh; }
+        aside { border-right: 0; border-bottom: 1px solid var(--borde); }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Administración local</h1>
+      <span class="rama" id="rama">…</span>
+      <nav aria-label="Secciones">
+        <button type="button" aria-selected="true">Autores</button>
+        <button type="button" disabled title="Fase 2 (#32)">Viajes</button>
+        <button type="button" disabled title="Fase 2 (#32)">Ajustes</button>
+        <button type="button" disabled title="Fase 3 (#22)">Posiciones</button>
+      </nav>
+    </header>
+    <div id="aviso" role="status"></div>
+    <main>
+      <aside>
+        <h2>Autores</h2>
+        <ul id="recuentos"></ul>
+
+        <h2>Selección</h2>
+        <p id="seleccion" class="nota">Ninguna foto seleccionada.</p>
+        <div class="fila">
+          <input id="buscar" placeholder="Pega una URL o el id de una foto" aria-label="URL o id de una foto" />
+          <button type="button" class="accion" id="anadir">Añadir</button>
+        </div>
+        <div class="fila">
+          <button type="button" class="accion" id="area" aria-pressed="false">Seleccionar un área</button>
+          <button type="button" class="accion" id="limpiar">Limpiar</button>
+        </div>
+        <p class="nota">Ctrl + clic en una foto la añade o la quita. En su ventana también se puede elegir todo su álbum.</p>
+
+        <h2>Cambiar el autor</h2>
+        <div class="fila">
+          <select id="autor" aria-label="Autor nuevo"></select>
+          <button type="button" class="accion principal" id="asignar">Asignar</button>
+        </div>
+        <div class="fila">
+          <button type="button" class="accion" id="devolver">Devolver al autor de la URL</button>
+        </div>
+        <p id="mensaje" role="status"></p>
+
+        <h2>Reasignadas (<span id="num-reasignadas">0</span>)</h2>
+        <ul id="reasignadas"></ul>
+
+        <h2 id="titulo-huerfanas" hidden>Reasignaciones huérfanas</h2>
+        <p id="nota-huerfanas" class="nota" hidden>Fotos que ya no están en los datos. Su línea de autores.json no hace nada.</p>
+        <ul id="huerfanas"></ul>
+      </aside>
+      <div id="mapa"></div>
+    </main>
+    <script src="/leaflet/leaflet.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

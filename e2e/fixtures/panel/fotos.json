@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@40.4,-3.7/data=!3m1!1sFOTO1!2e10",
+      "coordinates": { "latitude": 40.4, "longitude": -3.7 }
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@41.4,2.2/data=!3m1!1sFOTO2!2e10",
+      "coordinates": { "latitude": 41.4, "longitude": 2.2 }
+    },
+    {
+      "url": "https://photos.google.com/share/ALBUMFICTICIO/photo/FOTOALBUM1?key=CLAVEFICTICIA",
+      "coordinates": { "latitude": 46.9, "longitude": 11.9 },
+      "source": "googlePhotosAlbum"
+    }
+  ]
+}

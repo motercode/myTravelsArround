@@ -24,7 +24,15 @@ npm run build      # build de producción (lee los datos)
 npm run lint
 npm test           # tests unitarios (Vitest)
 npm run test:e2e   # tests E2E (Playwright; la primera vez: npx playwright install chromium)
+npm run admin      # panel de administración local en http://localhost:3040 (Node 22.18 o posterior)
 ```
+
+### Administrar los datos
+
+`npm run admin` abre un panel local para corregir a mano lo que la exportación no sabe, como el
+autor de fotos concretas. Lo que se cambia se guarda en `data/admin/` y solo llega a la web con
+commit, PR y merge: el panel no guarda si estás en `main`. Una tanda de cambios va en un solo
+issue y un solo PR. Detalle en [docs/features/panel-admin.md](docs/features/panel-admin.md).
 
 Para contribuir, empieza por [AGENTS.md](AGENTS.md): reglas, ciclo de un cambio y los scripts que lo
 automatizan (`scripts/nuevo-cambio.sh`, `scripts/comprobar.sh`, `scripts/abrir-pr.sh`).
@@ -42,6 +50,7 @@ Al construir:
 - El autor se deduce del `userId` de la URL (`/maps/contrib/<userId>/`). Los nombres se configuran en `AUTHORS`, en `src/lib/contributions.ts`. Las fotos de álbumes de Google Fotos (`photos.google.com/share/…`), cuya URL no lleva autor, cuentan como de motercode.
 - Las fotos repetidas entre ficheros se eliminan según el identificador de la foto: `!1s…` en las URLs de Maps y `/photo/<id>` en las de álbum.
 - Se descartan los items sin coordenadas o con `0,0`.
+- Se aplica encima lo administrado en `data/admin/` (por ahora, `autores.json`: el autor de fotos concretas). Si un fichero de `data/admin/` no tiene el formato esperado, el build falla.
 
 Formato esperado (el que genera `contribExtraction`):
 
