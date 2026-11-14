@@ -1,8 +1,10 @@
 // Tipos y utilidades compartidas (cliente y servidor) para las contribuciones.
 
+const MOTERCODE_USER_ID = "102214896434264755474";
+
 // userId de Google Maps (/maps/contrib/<userId>/...) -> nombre a mostrar.
 export const AUTHORS: Record<string, string> = {
-  "102214896434264755474": "motercode",
+  [MOTERCODE_USER_ID]: "motercode",
   "102784682183746369499": "fernando gost",
   // Ficticio: export de prueba desde la red (contribExtraction, npm run exportTest).
   "999999999999999999999": "testA",
@@ -17,9 +19,13 @@ export type Contribution = {
   imageUrl?: string;
 };
 
+// Las fotos cuya URL no dice el autor (las de álbumes compartidos de Google Fotos,
+// photos.google.com/share/...) son de motercode: así lo decidió el usuario (#7).
+export const DEFAULT_AUTHOR = AUTHORS[MOTERCODE_USER_ID];
+
 export function authorFromUrl(url: string): string {
   const userId = url.match(/\/maps\/contrib\/(\d+)/)?.[1];
-  if (!userId) return "desconocido";
+  if (!userId) return DEFAULT_AUTHOR;
   return AUTHORS[userId] ?? userId;
 }
 
@@ -32,7 +38,8 @@ export function stableThumbnailUrl(imageUrl: string): string {
   return /googleusercontent\.com/i.test(base) ? `${base}=w400-h240-p-k-no` : imageUrl;
 }
 
-// Identificador de la foto en Maps: bloque `!1s<photoId>!` de la URL.
+// Identificador de la foto: en Maps, el bloque `!1s<photoId>!` de la URL; en un álbum de Google
+// Fotos, el tramo `/photo/<photoId>` (el `?key=` es del álbum, no de la foto).
 export function photoIdFromUrl(url: string): string | undefined {
-  return url.match(/!1s([^!]+)/)?.[1];
+  return url.match(/!1s([^!]+)/)?.[1] ?? url.match(/photos\.google\.com\/share\/[^/]+\/photo\/([^/?#]+)/)?.[1];
 }

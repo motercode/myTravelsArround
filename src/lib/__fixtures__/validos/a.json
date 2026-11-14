@@ -1,5 +1,5 @@
 {
-  "total": 6,
+  "total": 7,
   "items": [
     {
       "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@40.4,-3.7/data=!3m1!1sFOTO1!2e10",
@@ -37,6 +37,14 @@
         "latitude": 95,
         "longitude": 10
       }
+    },
+    {
+      "url": "https://photos.google.com/share/OTROALBUM/photo/FOTOALBUM1?key=OTRACLAVE",
+      "coordinates": {
+        "latitude": 46.8,
+        "longitude": 11.8
+      },
+      "source": "googlePhotosAlbum"
     }
   ]
 }

@@ -8,7 +8,7 @@ Se despliega en Netlify como sitio estático generado con Next.js: https://mytra
 ## Funcionalidades
 
 - Mapa de OpenStreetMap a pantalla completa (moverse, zoom), que arranca encuadrado sobre las fotos.
-- Un punto azul por foto. Al pasar el ratón se ve la miniatura y el autor; al hacer clic se abre la foto en Google Maps.
+- Un punto azul por foto. Al pasar el ratón se ve la miniatura y el autor; al hacer clic se abre la foto en Google Maps (o en su álbum de Google Fotos).
 - Buscador de lugares y POI (Nominatim): al elegir un resultado, el mapa vuela hasta allí.
 - Filtro por autor, con el número de fotos de cada uno.
 - Diseño adaptado a móvil.
@@ -33,13 +33,14 @@ automatizan (`scripts/nuevo-cambio.sh`, `scripts/comprobar.sh`, `scripts/abrir-p
 
 1. Extrae las contribuciones con [`contribExtraction`](../contribExtraction) (extensión de Chrome + backend local), que genera `contribuciones.json`.
 2. Copia el fichero a `data/contributions/` con un nombre descriptivo, por ejemplo `motercode.json` o `fernando-gost.json`. Puede haber tantos ficheros como extracciones.
-3. Ejecuta `npm run build` (o haz push y Netlify lo construye).
+3. Ejecuta `npm run datos:origen`: cuenta por fichero cuántas fotos vienen de Maps, de álbumes de Google Fotos o de otro sitio, y falla si hay alguna de otro sitio.
+4. Ejecuta `npm run build` (o haz push y Netlify lo construye).
 
 Al construir:
 
 - Se leen todos los `.json` de `data/contributions/` y se valida su formato. Si un fichero no tiene el formato esperado, el build falla y el error dice cuál es.
-- El autor se deduce del `userId` de la URL (`/maps/contrib/<userId>/`). Los nombres se configuran en `AUTHORS`, en `src/lib/contributions.ts`.
-- Las fotos repetidas entre ficheros se eliminan según el identificador de la foto (`!1s…` en la URL).
+- El autor se deduce del `userId` de la URL (`/maps/contrib/<userId>/`). Los nombres se configuran en `AUTHORS`, en `src/lib/contributions.ts`. Las fotos de álbumes de Google Fotos (`photos.google.com/share/…`), cuya URL no lleva autor, cuentan como de motercode.
+- Las fotos repetidas entre ficheros se eliminan según el identificador de la foto: `!1s…` en las URLs de Maps y `/photo/<id>` en las de álbum.
 - Se descartan los items sin coordenadas o con `0,0`.
 
 Formato esperado (el que genera `contribExtraction`):
@@ -60,7 +61,7 @@ Formato esperado (el que genera `contribExtraction`):
 }
 ```
 
-Al hacer clic se abre `mapsUrlCanonical` (el visor general de Maps). Si no existe, se usa `url`.
+Al hacer clic se abre `mapsUrlCanonical` (el visor general de Maps). Si no existe, se usa `url`, que en las fotos de álbum es la foto dentro del álbum compartido.
 
 ## Despliegue en Netlify
 
@@ -126,6 +127,8 @@ Por eso solo se busca al pulsar Enter o el botón, nunca mientras se escribe.
 - **Takeout no sirve.** El de "Maps (Tus sitios)" solo exporta `Reseñas.json` y `Sitios guardados.json`, con enlaces a lugares y no a fotos.
 - **La imagen sola no dice dónde está.** De la URL de la imagen (`lh3.googleusercontent.com/...`) no se pueden sacar las coordenadas: los parámetros `pi`, `ya`, `ro` y `fo` son la orientación de la cámara (inclinación, rumbo, giro y campo de visión), no la posición.
 - **Las coordenadas están en la URL de cada foto en Maps** (`/@lat,lng,...`), y ahí es donde se obtienen.
+
+- **También álbumes de Google Fotos compartidos públicamente.** `contribExtraction` los exporta con `source: "googlePhotosAlbum"`. Su URL no dice el autor, así que se asignan a motercode (#7); se compartieron públicamente a propósito, así que cumplen la regla 2.
 
 Por eso existe `contribExtraction`. Recorre el perfil público en un navegador Chrome real con una extensión, porque Google bloquea los navegadores automatizados como Playwright, y guarda por cada foto su URL, coordenadas e imagen.
 
