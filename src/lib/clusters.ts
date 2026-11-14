@@ -1,7 +1,6 @@
 // Agrupación de puntos por zoom (#9) con supercluster: solo se dibujan los grupos y puntos del área
 // visible, en vez de un marcador por cada una de las ~20 000 fotos. Sin Leaflet ni React.
 import Supercluster from "supercluster";
-import type { Contribution } from "./contributions.ts";
 
 // Por encima de este zoom no se agrupa: se ven todas las fotos sueltas.
 export const CLUSTER_MAX_ZOOM = 16;
@@ -10,9 +9,10 @@ const CLUSTER_RADIUS = 60;
 
 export type PointProps = { index: number };
 
-export function buildClusterIndex(contributions: Contribution[]) {
+// `index` de cada punto es su posición en la lista recibida.
+export function buildClusterIndex(points: { lat: number; lng: number }[]) {
   return new Supercluster<PointProps>({ radius: CLUSTER_RADIUS, maxZoom: CLUSTER_MAX_ZOOM }).load(
-    contributions.map((c, index) => ({
+    points.map((c, index) => ({
       type: "Feature" as const,
       properties: { index },
       geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },

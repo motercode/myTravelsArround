@@ -1,13 +1,10 @@
 import { MapView } from "@/components/map/map-view";
-import { loadContributions } from "@/lib/load-contributions";
-import { buildTrips, tripsForPage } from "@/lib/trips";
+import { getSiteData } from "@/lib/site-data";
 
-// Los datos se leen de data/contributions/ (y data/admin/) al hacer el build: la página es
-// estática y los viajes también se calculan aquí.
+// La página es estática. Solo lleva los viajes (pocos); las fotos las pide el navegador a
+// /datos/base.json y sus URL, por bloques, a /datos/detalles/<n> (#42).
 export const dynamic = "force-static";
 
 export default function Home() {
-  const contributions = loadContributions();
-  const page = tripsForPage(contributions, buildTrips(contributions));
-  return <MapView contributions={page.contributions} trips={page.trips} />;
+  return <MapView trips={getSiteData().trips} />;
 }

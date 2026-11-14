@@ -144,9 +144,14 @@ Por eso existe `contribExtraction`. Recorre el perfil público en un navegador C
 
 ### Datos en `data/contributions/`, leídos en el build
 
-- **Página estática.** Los datos se cargan al construir la web, así que la página sale estática, sin backend ni llamadas en tiempo de ejecución. Es lo más sencillo y barato para Netlify.
+- **Página estática.** Los datos se cargan al construir la web, así que la página sale estática, sin backend. Es lo más sencillo y barato para Netlify.
+- **Los datos de las fotos, en ficheros estáticos aparte (#42).** Con todas las fotos dentro, la página pesaba 11,5 MB de HTML (y lo mismo otra vez en el payload RSC), sobre todo por las URL de Maps. Ahora el build genera, con route handlers estáticos de `src/app/datos/`:
+  - `/datos/base.json`: posición, autor y viaje de cada foto en arrays compactos (~120 KB comprimido). Es lo que necesitan siempre la agrupación y los filtros.
+  - `/datos/detalles/<n>`: la URL de Maps y la miniatura en bloques de 500 fotos (~60 KB comprimido cada uno). Las fotos se ordenan por cercanía (curva de Morton), así que las de una zona caen en pocos bloques, y el navegador solo pide los de las fotos sueltas que ve.
+
+  La página baja a 28 KB. Se usan bloques por cercanía y no un fichero por foto (unos 21 000 ficheros y una petición por cada foto que se mira) ni zonas fijas del mapa (en las zonas densas un fichero sería enorme).
 - **Un fichero por extracción.** Así se pueden ir añadiendo extracciones de cada usuario sin tener que fusionarlas a mano; el deduplicado evita fotos repetidas.
-- **Por qué no `public/`.** Ahí se publicaría el JSON en bruto, y para el mapa solo hacen falta unos pocos campos por foto.
+- **Por qué no `public/`.** Ahí se publicaría el JSON en bruto, y para el mapa solo hacen falta unos pocos campos por foto. Los ficheros de `/datos/` se generan en el build a partir de los JSON, ya reducidos.
 - **Validación con zod.** Si cambia el formato del extractor, el build falla con un error claro en lugar de dibujar un mapa vacío.
 
 ### Administración solo en local, en `data/admin/`
