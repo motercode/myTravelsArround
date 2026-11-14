@@ -7,6 +7,9 @@ let estado = null;
 const fotos = new Map(); // id → { id, lat, lng, autor, url, miniatura, marcador }
 const seleccion = new Set();
 const colorDe = new Map();
+let seccion = "autores";
+let viajeElegido = null; // id del viaje que se ve en la pestaña Viajes
+const marcados = new Set(); // ids de viajes marcados para unir
 
 // Zona de clic: el punto mide 4 px de radio; con 4 px más de tolerancia el radio efectivo es el
 // doble y el área, 4 veces, sin que el punto se vea más grande.
@@ -35,6 +38,13 @@ const imagenGrande = (miniatura) =>
   miniatura && /googleusercontent\.com/.test(miniatura) ? `${miniatura.split("=")[0]}=w800-h600-k-no` : miniatura;
 
 function estilo(foto) {
+  // En Viajes, con un viaje elegido, el resto de fotos se apagan.
+  if (seccion === "viajes" && viajeElegido) {
+    const dentro = estado.viajes[foto.viaje]?.id === viajeElegido;
+    return dentro
+      ? { radius: 5, color: "#000", weight: 1.5, fillColor: colorDe.get(foto.autor), fillOpacity: 0.9, opacity: 1 }
+      : { radius: 3, color: "#999", weight: 0, fillColor: "#999", fillOpacity: 0.25, opacity: 0.25 };
+  }
   const seleccionada = seleccion.has(foto.id);
   const reasignada = estado.reasignadas[foto.id] !== undefined;
   return {
@@ -43,6 +53,7 @@ function estilo(foto) {
     weight: seleccionada ? 3 : reasignada ? 2 : 1,
     fillColor: colorDe.get(foto.autor),
     fillOpacity: 0.8,
+    opacity: 1,
   };
 }
 
@@ -62,6 +73,9 @@ function popup(foto) {
   const id = document.createElement("div");
   id.className = "id";
   id.textContent = foto.id;
+  const viaje = estado.viajes[foto.viaje];
+  const fecha = document.createElement("div");
+  fecha.textContent = `${foto.fecha ? `Fecha: ${foto.fecha.replace("T", " ")}` : "Sin fecha"}${viaje ? ` · viaje ${etiqueta(viaje)}` : ""}`;
   const enlace = document.createElement("a");
   enlace.href = foto.url;
   enlace.target = "_blank";
@@ -84,7 +98,24 @@ function popup(foto) {
       }),
     );
   }
-  div.append(texto, id, enlace, fila);
+  if (seccion === "viajes" && viaje) {
+    fila.append(
+      boton("Ver su viaje", () => {
+        elegirViaje(viaje.id);
+        mapa.closePopup();
+      }),
+    );
+    if (foto.fecha && foto.fecha.length > 10) {
+      fila.append(
+        boton("Cortar antes de esta foto", () => {
+          elegirViaje(viaje.id, false);
+          $("viaje-corte").value = foto.fecha.replace("T", " ");
+          mapa.closePopup();
+        }),
+      );
+    }
+  }
+  div.append(texto, fecha, id, enlace, fila);
   return div;
 }
 
@@ -101,13 +132,13 @@ function cargar(nuevo) {
   const primeraVez = estado === null;
   estado = nuevo;
   estado.autores.forEach((a, i) => colorDe.set(a, COLORES[i % COLORES.length]));
-  for (const [id, lat, lng, autor, url, miniatura] of estado.fotos) {
+  for (const [id, lat, lng, autor, url, miniatura, viaje, fecha] of estado.fotos) {
     const existente = fotos.get(id);
     if (existente) {
-      existente.autor = autor;
+      Object.assign(existente, { autor, viaje, fecha });
       continue;
     }
-    const foto = { id, lat, lng, autor, url, miniatura };
+    const foto = { id, lat, lng, autor, url, miniatura, viaje, fecha };
     foto.marcador = L.circleMarker([lat, lng], estilo(foto)).addTo(mapa);
     foto.marcador.on("click", (e) => {
       if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) alternarSeleccion([id]);
@@ -118,8 +149,14 @@ function cargar(nuevo) {
   if (primeraVez && fotos.size > 0) {
     mapa.fitBounds(L.latLngBounds([...fotos.values()].map((f) => [f.lat, f.lng])), { padding: [20, 20] });
   }
+  // Los ids de viaje cambian al unir o separar: lo que ya no existe se olvida.
+  const ids = new Set(estado.viajes.map((v) => v.id));
+  if (viajeElegido && !ids.has(viajeElegido)) viajeElegido = null;
+  for (const id of [...marcados]) if (!ids.has(id)) marcados.delete(id);
   for (const foto of fotos.values()) foto.marcador.setStyle(estilo(foto));
   pintarPanel();
+  pintarViajes();
+  pintarAjustes();
 }
 
 function pintarPanel() {
@@ -203,9 +240,9 @@ function anadir(ids) {
   refrescarEstilos(ids);
 }
 
-function mensaje(texto, error = false) {
-  $("mensaje").textContent = texto;
-  $("mensaje").className = error ? "error" : "";
+function mensaje(texto, error = false, donde = "mensaje") {
+  $(donde).textContent = texto;
+  $(donde).className = error ? "error" : "";
 }
 
 // Acepta el id de una foto o una URL de Maps (`!1s<photoId>!`) o de un álbum (`/photo/<photoId>`).
@@ -232,15 +269,25 @@ $("limpiar").addEventListener("click", () => {
   refrescarEstilos(ids);
 });
 
-async function guardar(autor) {
-  const ids = [...seleccion];
-  const respuesta = await fetch("/api/autores", {
+// POST a la API del panel; devuelve el estado nuevo o null (y enseña el error en `donde`).
+async function enviar(ruta, datos, donde) {
+  const respuesta = await fetch(ruta, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ids, autor }),
+    body: JSON.stringify(datos),
   });
   const cuerpo = await respuesta.json();
-  if (!respuesta.ok) return mensaje(cuerpo.error ?? "No se ha podido guardar.", true);
+  if (!respuesta.ok) {
+    mensaje(cuerpo.error ?? "No se ha podido guardar.", true, donde);
+    return null;
+  }
+  return cuerpo;
+}
+
+async function guardar(autor) {
+  const ids = [...seleccion];
+  const cuerpo = await enviar("/api/autores", { ids, autor }, "mensaje");
+  if (!cuerpo) return;
   seleccion.clear();
   cargar(cuerpo);
   mensaje(
@@ -280,6 +327,190 @@ mapa.on("mouseup", () => {
   modoArea = false;
   $("area").setAttribute("aria-pressed", "false");
   mapa.dragging.enable();
+});
+
+// --- Pestañas ---
+
+for (const b of document.querySelectorAll("nav button[data-seccion]")) {
+  b.addEventListener("click", () => {
+    seccion = b.dataset.seccion;
+    for (const otro of document.querySelectorAll("nav button[data-seccion]")) {
+      otro.setAttribute("aria-selected", String(otro === b));
+      $(`seccion-${otro.dataset.seccion}`).hidden = otro !== b;
+    }
+    mapa.closePopup();
+    for (const foto of fotos.values()) foto.marcador.setStyle(estilo(foto));
+  });
+}
+
+// --- Viajes ---
+
+const rango = (v) => (v.inicio === v.fin ? v.inicio : `${v.inicio} → ${v.fin}`);
+const etiqueta = (v) => (v.nombre ? `${v.nombre} (${rango(v)})` : rango(v));
+
+function elegirViaje(id, encuadrar = true) {
+  viajeElegido = id;
+  for (const foto of fotos.values()) foto.marcador.setStyle(estilo(foto));
+  pintarViajes();
+  if (!id || !encuadrar) return;
+  const indice = estado.viajes.findIndex((v) => v.id === id);
+  const puntos = [...fotos.values()].filter((f) => f.viaje === indice).map((f) => [f.lat, f.lng]);
+  if (puntos.length > 0) mapa.fitBounds(L.latLngBounds(puntos), { padding: [30, 30], maxZoom: 15 });
+}
+
+function pintarViajes() {
+  const { viajes, git } = estado;
+  $("num-viajes").textContent = String(viajes.length);
+
+  const selector = $("filtro-autor");
+  const autor = selector.value;
+  selector.replaceChildren(new Option("Todos los autores", ""), ...estado.autores.map((a) => new Option(a, a)));
+  selector.value = autor;
+  const busca = $("filtro-nombre").value.trim().toLowerCase();
+  const visibles = viajes.filter(
+    (v) => (!autor || v.autor === autor) && (!busca || `${v.nombre ?? ""} ${v.inicio} ${v.fin}`.toLowerCase().includes(busca)),
+  );
+
+  // Agrupados por año, del más reciente al más antiguo (ya vienen así).
+  const porAnio = new Map();
+  for (const v of visibles) {
+    const anio = v.inicio.slice(0, 4);
+    if (!porAnio.has(anio)) porAnio.set(anio, []);
+    porAnio.get(anio).push(v);
+  }
+  const abiertos = new Set([...$("lista-viajes").querySelectorAll("details[open]")].map((d) => d.dataset.anio));
+  const elegido = viajes.find((v) => v.id === viajeElegido);
+  const anioElegido = elegido?.inicio.slice(0, 4);
+  $("lista-viajes").replaceChildren(
+    ...[...porAnio].map(([anio, lista], i) => {
+      const details = document.createElement("details");
+      details.dataset.anio = anio;
+      details.open = abiertos.size === 0 ? i === 0 : abiertos.has(anio) || anio === anioElegido || busca !== "";
+      const summary = document.createElement("summary");
+      summary.textContent = `${anio} · ${lista.length} ${lista.length === 1 ? "viaje" : "viajes"}`;
+      const ul = document.createElement("ul");
+      ul.append(
+        ...lista.map((v) => {
+          const li = document.createElement("li");
+          li.className = "viaje";
+          li.setAttribute("aria-current", String(v.id === viajeElegido));
+          const marca = document.createElement("input");
+          marca.type = "checkbox";
+          marca.checked = marcados.has(v.id);
+          marca.setAttribute("aria-label", `Marcar ${etiqueta(v)} · ${v.autor}`);
+          marca.addEventListener("change", () => {
+            if (marca.checked) marcados.add(v.id);
+            else marcados.delete(v.id);
+            pintarViajes();
+          });
+          const ver = boton("", () => elegirViaje(v.id));
+          ver.className = "enlace";
+          ver.append(
+            Object.assign(document.createElement("span"), { textContent: etiqueta(v) }),
+            Object.assign(document.createElement("span"), {
+              className: "nota",
+              textContent: `${v.dias} ${v.dias === 1 ? "día" : "días"} · ${v.fotos} ${v.fotos === 1 ? "foto" : "fotos"} · ${v.autor}`,
+            }),
+          );
+          li.append(marca, ver);
+          return li;
+        }),
+      );
+      details.append(summary, ul);
+      return details;
+    }),
+  );
+
+  const dos = [...marcados].map((id) => viajes.find((v) => v.id === id));
+  $("unir").disabled = !git.puedeGuardar || dos.length !== 2 || dos[0].autor !== dos[1].autor;
+  $("unir").title = dos.length === 2 && dos[0].autor !== dos[1].autor ? "Los dos viajes tienen que ser del mismo autor." : "";
+
+  $("viaje").hidden = !elegido;
+  if (elegido) {
+    $("viaje-titulo").textContent = `${etiqueta(elegido)} · ${elegido.autor}`;
+    $("viaje-rango").textContent = `Primera foto: ${elegido.primera.replace("T", " ")} · última: ${elegido.ultima.replace("T", " ")}`;
+    if (document.activeElement !== $("viaje-nombre")) $("viaje-nombre").value = elegido.nombre ?? "";
+    $("viaje-nombre").dataset.viaje = elegido.id;
+  }
+  for (const id of ["guardar-nombre", "separar"]) $(id).disabled = !git.puedeGuardar;
+
+  const huerfanas = estado.reglasHuerfanas;
+  $("titulo-reglas-huerfanas").hidden = $("nota-reglas-huerfanas").hidden = huerfanas.length === 0;
+  $("reglas-huerfanas").replaceChildren(
+    ...huerfanas.map(({ tipo, indice, regla }) => {
+      const li = document.createElement("li");
+      const descripcion =
+        tipo === "nombre"
+          ? `Nombre «${regla.name}» en ${regla.at} (${regla.author})`
+          : regla.type === "merge"
+            ? `Unir ${regla.trips.join(" y ")} (${regla.author})`
+            : `Separar en ${regla.at} (${regla.author})`;
+      li.className = "fila";
+      li.append(descripcion);
+      const quitar = boton("Quitar", async () => {
+        const nuevo = await enviar("/api/viajes/quitar-regla", { tipo, indice }, "mensaje-viajes");
+        if (nuevo) {
+          cargar(nuevo);
+          mensaje("Regla quitada.", false, "mensaje-viajes");
+        }
+      });
+      quitar.disabled = !git.puedeGuardar;
+      li.append(quitar);
+      return li;
+    }),
+  );
+}
+
+$("filtro-autor").addEventListener("change", pintarViajes);
+$("ver-todas").addEventListener("click", () => elegirViaje(null));
+$("filtro-nombre").addEventListener("input", pintarViajes);
+
+$("guardar-nombre").addEventListener("click", async () => {
+  const id = viajeElegido;
+  const nombre = $("viaje-nombre").value.trim();
+  const nuevo = await enviar("/api/viajes/nombre", { id, nombre }, "mensaje-viajes");
+  if (!nuevo) return;
+  cargar(nuevo);
+  mensaje(nombre ? `Nombre guardado: ${nombre}.` : "Nombre quitado.", false, "mensaje-viajes");
+});
+
+$("unir").addEventListener("click", async () => {
+  const ids = [...marcados];
+  const nuevo = await enviar("/api/viajes/unir", { ids }, "mensaje-viajes");
+  if (!nuevo) return;
+  // El viaje unido empieza donde el más antiguo de los dos.
+  const antiguo = ids.map((id) => estado.viajes.find((v) => v.id === id)).sort((a, b) => (a.primera < b.primera ? -1 : 1))[0];
+  marcados.clear();
+  cargar(nuevo);
+  const unido = estado.viajes.find((v) => v.autor === antiguo.autor && v.primera === antiguo.primera);
+  elegirViaje(unido?.id ?? null);
+  mensaje("Viajes unidos.", false, "mensaje-viajes");
+});
+
+$("separar").addEventListener("click", async () => {
+  // Acepta «2024-05-03 14:00», «2024-05-03T14:00» o con segundos.
+  const valor = $("viaje-corte").value.trim().replace(" ", "T");
+  const momento = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(valor) ? `${valor}:00` : valor;
+  const nuevo = await enviar("/api/viajes/separar", { id: viajeElegido, momento }, "mensaje-viajes");
+  if (!nuevo) return;
+  $("viaje-corte").value = "";
+  cargar(nuevo);
+  mensaje(`Viaje separado en ${momento.replace("T", " ")}.`, false, "mensaje-viajes");
+});
+
+// --- Ajustes ---
+
+function pintarAjustes() {
+  if (document.activeElement !== $("dias-vacios")) $("dias-vacios").value = String(estado.ajustes.maxEmptyDaysInTrip);
+  $("guardar-ajustes").disabled = !estado.git.puedeGuardar;
+}
+
+$("guardar-ajustes").addEventListener("click", async () => {
+  const dias = Number($("dias-vacios").value);
+  const nuevo = await enviar("/api/ajustes", { maxEmptyDaysInTrip: dias }, "mensaje-ajustes");
+  if (!nuevo) return;
+  cargar(nuevo);
+  mensaje(`Guardado: ${dias} ${dias === 1 ? "día" : "días"}. Ahora hay ${estado.viajes.length} viajes.`, false, "mensaje-ajustes");
 });
 
 fetch("/api/estado")

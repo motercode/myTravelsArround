@@ -30,7 +30,7 @@ build lee los dos y aplica `data/admin/` encima.
 | Fichero | Qué guarda | Sección | Issue |
 |---|---|---|---|
 | `data/admin/autores.json` | autor de fotos concretas | Autores | #33 |
-| `data/admin/viajes.json` | nombres de viaje | Viajes | #32 |
+| `data/admin/viajes.json` | nombres de viaje, uniones y cortes | Viajes | #32, #40 |
 | `data/admin/ajustes.json` | ajustes del build, p. ej. el umbral de días vacíos | Ajustes | #32 |
 | `data/admin/posiciones.json` | posición deducida de los tracks (`trackMatch`) | Posiciones | #22 |
 
@@ -52,8 +52,15 @@ cambiar el formato más adelante.
 // data/admin/autores.json: id de la foto → autor final (un nombre de AUTHORS)
 { "version": 1, "photos": { "motercode:AF1QipNTN0Nk…": "fernando gost" } }
 
-// data/admin/viajes.json: nombre de un viaje (sección 5.1)
-{ "version": 1, "names": [{ "author": "motercode", "day": "2018-09-21", "name": "Alpes en moto" }] }
+// data/admin/viajes.json: uniones, cortes y nombres de viaje (sección 5.1)
+{
+  "version": 1,
+  "operations": [
+    { "type": "merge", "author": "motercode", "trips": ["2018-09-21T08:12:00", "2018-10-02T10:00:00"] },
+    { "type": "split", "author": "motercode", "at": "2018-09-25T14:00:00" }
+  ],
+  "names": [{ "author": "motercode", "at": "2018-09-21T08:12:00", "name": "Alpes en moto" }]
+}
 
 // data/admin/ajustes.json
 { "version": 1, "maxEmptyDaysInTrip": 2 }
@@ -69,7 +76,8 @@ En `src/lib/load-contributions.ts`, después de leer `data/contributions/` y qui
 
 1. `autores.json`: cambia `author` de las fotos listadas. Su `id` no cambia.
 2. `posiciones.json`: aplica las posiciones como dice `posiciones-desde-tracks.md`, sección 7.2.
-3. `viajes.json` y `ajustes.json`: los usa `buildTrips` (fase 1 de viajes, #8).
+3. `viajes.json` y `ajustes.json`: los usa `buildTripsWithRules` (`src/lib/trips.ts`), desde
+   `getSiteData()` (`src/lib/site-data.ts`).
 
 Validación con zod. Estos ficheros los escribe el panel, así que un formato no válido es un
 error: **el build falla** con el nombre del fichero (igual que con `data/contributions/`). Un id
@@ -118,21 +126,39 @@ plantilla (regla 6).
   - En `main`, el panel no guarda.
   - E2E del panel sobre datos ficticios: reasignar una foto y ver que se escribe `autores.json`.
 
-### Fase 2: Viajes y Ajustes (después del código de la fase 1 de viajes, #8)
+### Fase 2: Viajes y Ajustes (hecho)
 
-#### 5.1 Nombres de viaje
+#### 5.1 Viajes: nombres, unir y separar (hecho, #32 y #40)
 
-El id de un viaje (`<autor>-<primer día>`) cambia si entran fotos de un día anterior, así que el
-nombre **no se guarda por id**. Se guarda con el **autor y un día cualquiera del viaje**
-(`{ author, day, name }`) y se aplica al viaje de ese autor que contenga ese día.
+El id de un viaje (`<autor>-<primer día>`) cambia al unir, separar o al entrar fotos de un día
+anterior, así que las reglas **no se guardan por id**. Cada viaje se señala con el **autor y un
+momento `at`** (`YYYY-MM-DD` o `YYYY-MM-DDTHH:mm:ss`, hora local como `takenAt`): el viaje de ese
+autor que tiene una foto justo en ese momento o, si ninguno la tiene, el que lo contiene en fechas.
+El panel ancla los nombres y las uniones en la **primera foto** del viaje, y por eso al unir dos
+viajes no seguidos los de entre medias (que el unido abarca en fechas) siguen con sus reglas.
 
-- Si dos nombres caen en el mismo viaje (por ejemplo, porque dos viajes se han unido), el build no
-  falla: usa el del día más antiguo y el panel avisa del conflicto.
-- Un nombre cuyo día ya no está en ningún viaje queda huérfano y el panel lo lista.
+El build calcula los viajes así: agrupación automática con `maxEmptyDaysInTrip`, después las
+`operations` **en el orden en que se hicieron** y al final los `names`.
+
+- **Unir**: se marcan dos viajes del mismo autor y se pulsa «Unir». Solo esos dos: los que haya
+  entre medias siguen aparte. Se queda el nombre del más antiguo, o el único si solo uno lo tiene.
+- **Separar**: se elige un viaje y se da la fecha y hora del corte (en la ventana de una foto,
+  «Cortar antes de esta foto» la rellena). Lo anterior al corte va a un viaje y lo demás a otro.
+  Las fotos con solo el día del corte van al lado con más horas de ese día: con el corte a las
+  12:00 o más tarde, al anterior. Si el viaje tenía nombre, las partes se llaman `PRE-<nombre>` y
+  `POST-<nombre>`; luego se cambian a mano. El panel no guarda un corte que deja un lado vacío ni
+  uno que, por solaparse con un viaje unido, caería en otro viaje.
+- **Nombre**: poner uno sustituye los que tenía el viaje; vacío lo quita.
+- Si dos nombres caen en el mismo viaje (al unir), el build no falla: usa el del momento más
+  antiguo. El otro se queda en el fichero sin efecto y vuelve si se separa el viaje.
+- Las reglas que ya no caen en ningún viaje (huérfanas) no son un error: el panel las lista y las
+  deja quitar.
+- En el mapa del panel, con un viaje elegido, el resto de fotos se apagan.
 
 #### 5.2 Ajustes
 
-- `maxEmptyDaysInTrip` (2 por defecto). Solo desde el panel, nunca desde la web pública.
+- `maxEmptyDaysInTrip` (2 por defecto, de 0 a 60). Solo desde el panel, nunca desde la web pública.
+  Las uniones, cortes y nombres se aplican después, así que siguen valiendo al cambiarlo.
 
 ### Fase 3: Posiciones (tracks, #22)
 

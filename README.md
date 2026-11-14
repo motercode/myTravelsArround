@@ -11,7 +11,7 @@ Se despliega en Netlify como sitio estático generado con Next.js: https://mytra
 - Fotos agrupadas por zona: cada grupo muestra cuántas fotos tiene y es más grande cuantas más hay; al pulsarlo, el mapa se acerca. De cerca, un punto azul por foto: al pasar el ratón se ve la miniatura y el autor, y al hacer clic se abre la foto en Google Maps (o en su álbum de Google Fotos).
 - Buscador de lugares y POI (Nominatim): al elegir un resultado, el mapa vuela hasta allí.
 - Filtro por autor, con el número de fotos de cada uno.
-- Viajes: un desplegable con los viajes de cada autor agrupados por año. Al elegir uno, el mapa muestra solo sus fotos y se encuadra sobre ellas. Un viaje son días con fotos con 2 días o menos sin fotos entre ellos, según la fecha de cada foto (`takenAt`, que `contribExtraction` exporta con `--dates`).
+- Viajes: un desplegable con los viajes de cada autor agrupados por año. Al elegir uno, el mapa muestra solo sus fotos y se encuadra sobre ellas. Un viaje son días con fotos con 2 días o menos sin fotos entre ellos (el umbral se cambia en el panel), según la fecha de cada foto (`takenAt`, que `contribExtraction` exporta con `--dates`). Desde el panel de administración se les pone nombre y se unen o separan.
 - Diseño adaptado a móvil.
 
 ## Uso
@@ -30,8 +30,8 @@ npm run admin      # panel de administración local en http://localhost:3040 (No
 
 ### Administrar los datos
 
-`npm run admin` abre un panel local para corregir a mano lo que la exportación no sabe, como el
-autor de fotos concretas. Lo que se cambia se guarda en `data/admin/` y solo llega a la web con
+`npm run admin` abre un panel local para corregir a mano lo que la exportación no sabe: el autor
+de fotos concretas, el nombre de los viajes, unir o separar viajes y el umbral de días sin fotos. Lo que se cambia se guarda en `data/admin/` y solo llega a la web con
 commit, PR y merge: el panel no guarda si estás en `main`. Una tanda de cambios va en un solo
 issue y un solo PR. Detalle en [docs/features/panel-admin.md](docs/features/panel-admin.md).
 
@@ -51,7 +51,7 @@ Al construir:
 - El autor se deduce del `userId` de la URL (`/maps/contrib/<userId>/`). Los nombres se configuran en `AUTHORS`, en `src/lib/contributions.ts`. Las fotos de álbumes de Google Fotos (`photos.google.com/share/…`), cuya URL no lleva autor, cuentan como de motercode.
 - Las fotos repetidas entre ficheros se eliminan según el identificador de la foto: `!1s…` en las URLs de Maps y `/photo/<id>` en las de álbum.
 - Se descartan los items sin coordenadas o con `0,0`.
-- Se aplica encima lo administrado en `data/admin/` (por ahora, `autores.json`: el autor de fotos concretas). Si un fichero de `data/admin/` no tiene el formato esperado, el build falla.
+- Se aplica encima lo administrado en `data/admin/` (`autores.json`: el autor de fotos concretas; `viajes.json`: nombres, uniones y cortes de viajes; `ajustes.json`: el umbral de días sin fotos). Si un fichero de `data/admin/` no tiene el formato esperado, el build falla.
 
 Formato esperado (el que genera `contribExtraction`):
 

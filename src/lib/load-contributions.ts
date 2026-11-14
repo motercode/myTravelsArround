@@ -1,7 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { applyAuthorOverrides, AUTHORS_FILE, authorsFileSchema } from "./admin-data.ts";
+import {
+  applyAuthorOverrides,
+  AUTHORS_FILE,
+  authorsFileSchema,
+  defaultSettings,
+  emptyTripsFile,
+  SETTINGS_FILE,
+  settingsFileSchema,
+  TRIPS_FILE,
+  tripsFileSchema,
+  type SettingsFile,
+  type TripsFile,
+} from "./admin-data.ts";
 import {
   authorFromUrl,
   photoIdFromUrl,
@@ -98,12 +110,25 @@ export function loadContributions(
 }
 
 // Los ficheros de data/admin/ los escribe el panel: un formato no válido es un error y para el build.
-function applyAdmin(contributions: Contribution[], adminDir: string): Contribution[] {
-  const authorsPath = path.join(adminDir, AUTHORS_FILE);
-  if (!fs.existsSync(authorsPath)) return contributions;
-  const parsed = authorsFileSchema.safeParse(JSON.parse(fs.readFileSync(authorsPath, "utf8")));
+function readAdminFile<T>(adminDir: string, file: string, schema: z.ZodType<T>): T | null {
+  const filePath = path.join(adminDir, file);
+  if (!fs.existsSync(filePath)) return null;
+  const parsed = schema.safeParse(JSON.parse(fs.readFileSync(filePath, "utf8")));
   if (!parsed.success) {
-    throw new Error(`Formato no válido en data/admin/${AUTHORS_FILE}: ${parsed.error.message}`);
+    throw new Error(`Formato no válido en data/admin/${file}: ${parsed.error.message}`);
   }
-  return applyAuthorOverrides(contributions, parsed.data).contributions;
+  return parsed.data;
+}
+
+function applyAdmin(contributions: Contribution[], adminDir: string): Contribution[] {
+  const authors = readAdminFile(adminDir, AUTHORS_FILE, authorsFileSchema);
+  return authors ? applyAuthorOverrides(contributions, authors).contributions : contributions;
+}
+
+/** Reglas de viajes (viajes.json) y ajustes (ajustes.json) de data/admin/, o los valores por defecto. */
+export function loadTripAdmin(adminDir: string = ADMIN_DIR): { rules: TripsFile; settings: SettingsFile } {
+  return {
+    rules: readAdminFile(adminDir, TRIPS_FILE, tripsFileSchema) ?? emptyTripsFile(),
+    settings: readAdminFile(adminDir, SETTINGS_FILE, settingsFileSchema) ?? defaultSettings(),
+  };
 }

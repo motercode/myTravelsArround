@@ -48,8 +48,12 @@
       .id { font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; }
       .enlace { color: var(--acento); cursor: pointer; background: none; border: 0; padding: 0; font: inherit; text-align: left; }
       .nota { color: var(--suave); font-size: 12px; }
-      #mensaje { min-height: 1.4em; font-size: 12px; }
-      #mensaje.error { color: var(--peligro); }
+      [id^="mensaje"] { min-height: 1.4em; font-size: 12px; }
+      [id^="mensaje"].error { color: var(--peligro); }
+      #lista-viajes details summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+      .viaje { display: flex; gap: 6px; align-items: flex-start; padding: 3px 0; }
+      .viaje[aria-current="true"] { background: var(--aviso-fondo); }
+      .viaje .enlace span { display: block; }
       .popup img { display: block; width: 320px; max-width: 70vw; height: auto; margin-bottom: 6px; border-radius: 4px; background: var(--fondo); }
       @media (max-width: 760px) {
         main { grid-template-columns: 1fr; grid-template-rows: auto 60vh; }
@@ -62,15 +66,16 @@
       <h1>Administración local</h1>
       <span class="rama" id="rama">…</span>
       <nav aria-label="Secciones">
-        <button type="button" aria-selected="true">Autores</button>
-        <button type="button" disabled title="Fase 2 (#32)">Viajes</button>
-        <button type="button" disabled title="Fase 2 (#32)">Ajustes</button>
+        <button type="button" data-seccion="autores" aria-selected="true">Autores</button>
+        <button type="button" data-seccion="viajes" aria-selected="false">Viajes</button>
+        <button type="button" data-seccion="ajustes" aria-selected="false">Ajustes</button>
         <button type="button" disabled title="Fase 3 (#22)">Posiciones</button>
       </nav>
     </header>
     <div id="aviso" role="status"></div>
     <main>
       <aside>
+        <section id="seccion-autores">
         <h2>Autores</h2>
         <ul id="recuentos"></ul>
 
@@ -102,6 +107,55 @@
         <h2 id="titulo-huerfanas" hidden>Reasignaciones huérfanas</h2>
         <p id="nota-huerfanas" class="nota" hidden>Fotos que ya no están en los datos. Su línea de autores.json no hace nada.</p>
         <ul id="huerfanas"></ul>
+        </section>
+
+        <section id="seccion-viajes" hidden>
+          <h2>Viajes (<span id="num-viajes">0</span>)</h2>
+          <div class="fila">
+            <select id="filtro-autor" aria-label="Autor de los viajes"></select>
+            <input id="filtro-nombre" placeholder="Buscar por nombre o fecha" aria-label="Buscar viaje" />
+          </div>
+          <div class="fila">
+            <button type="button" class="accion" id="unir">Unir los dos marcados</button>
+          </div>
+          <p class="nota">Marca dos viajes del mismo autor para unirlos (solo esos dos). Se queda el nombre del más antiguo.</p>
+          <p id="mensaje-viajes" role="status"></p>
+
+          <div id="viaje" hidden>
+            <h2 id="viaje-titulo"></h2>
+            <p class="nota" id="viaje-rango"></p>
+            <div class="fila">
+              <button type="button" class="accion" id="ver-todas">Ver todas las fotos</button>
+            </div>
+            <div class="fila">
+              <input id="viaje-nombre" placeholder="Nombre del viaje" aria-label="Nombre del viaje" />
+              <button type="button" class="accion principal" id="guardar-nombre">Guardar el nombre</button>
+            </div>
+            <p class="nota">Con el nombre vacío se quita.</p>
+            <div class="fila">
+              <input id="viaje-corte" placeholder="2024-05-03 14:00" aria-label="Fecha y hora del corte" />
+              <button type="button" class="accion" id="separar">Separar aquí</button>
+            </div>
+            <p class="nota">Lo anterior a esa fecha y hora queda en un viaje y lo demás en otro. Las fotos que solo tienen el día del corte van al lado con más horas de ese día. Si tenía nombre, las partes se llaman PRE- y POST-.</p>
+          </div>
+
+          <ul id="lista-viajes"></ul>
+
+          <h2 id="titulo-reglas-huerfanas" hidden>Reglas huérfanas</h2>
+          <p id="nota-reglas-huerfanas" class="nota" hidden>Reglas de viajes.json que ya no caen en ningún viaje y no hacen nada.</p>
+          <ul id="reglas-huerfanas"></ul>
+        </section>
+
+        <section id="seccion-ajustes" hidden>
+          <h2>Ajustes</h2>
+          <label for="dias-vacios">Días sin fotos que caben dentro de un viaje</label>
+          <div class="fila">
+            <input id="dias-vacios" type="number" min="0" max="60" step="1" />
+            <button type="button" class="accion principal" id="guardar-ajustes">Guardar</button>
+          </div>
+          <p class="nota">Con más días sin fotos que estos entre dos días con fotos empieza un viaje nuevo. Las uniones, cortes y nombres se mantienen: se aplican después.</p>
+          <p id="mensaje-ajustes" role="status"></p>
+        </section>
       </aside>
       <div id="mapa"></div>
     </main>
