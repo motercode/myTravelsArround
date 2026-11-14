@@ -71,6 +71,7 @@ npm run lint       # ESLint
 npm run build      # build estático, el mismo que hace Netlify
 npm test           # unitarios (Vitest), junto al código: src/**/*.test.ts
 npm run test:e2e   # E2E (Playwright) en e2e/; arranca npm run dev si no está abierto
+npm run admin      # panel de administración local (tools/admin/), escribe en data/admin/
 scripts/comprobar.sh   # secretos, regla 6, lint, build y tests; informe en .evidencia/
 ```
 

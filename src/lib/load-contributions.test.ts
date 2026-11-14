@@ -42,6 +42,26 @@ describe("loadContributions", () => {
     expect(porId("111111111111111111111:FOTO1")?.mapsUrl).toContain("/maps/contrib/111111111111111111111/");
   });
 
+  it("con un directorio de datos propio no lee data/admin/", () => {
+    expect(porId("motercode:FOTOALBUM1")?.author).toBe("motercode");
+  });
+
+  it("aplica data/admin/autores.json: cambia el autor, no el id, e ignora los ids que ya no existen", () => {
+    const conAdmin = loadContributions(path.join(FIXTURES, "validos"), path.join(FIXTURES, "admin-valido"));
+    expect(conAdmin.find((c) => c.id === "motercode:FOTOALBUM1")?.author).toBe("testA");
+    expect(conAdmin).toHaveLength(contributions.length);
+  });
+
+  it("falla con el nombre del fichero si data/admin/autores.json no es válido", () => {
+    expect(() => loadContributions(path.join(FIXTURES, "validos"), path.join(FIXTURES, "admin-invalido"))).toThrow(
+      /admin\/autores\.json/,
+    );
+  });
+
+  it("sin autores.json en el directorio de administración, deja los autores como están", () => {
+    expect(loadContributions(path.join(FIXTURES, "validos"), path.join(FIXTURES, "no-existe"))).toEqual(contributions);
+  });
+
   it("devuelve una lista vacía si no existe el directorio", () => {
     expect(loadContributions(path.join(FIXTURES, "no-existe"))).toEqual([]);
   });

@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { authorFromUrl, photoIdFromUrl, stableThumbnailUrl, type Contribution } from "@/lib/contributions";
+import { applyAuthorOverrides, AUTHORS_FILE, authorsFileSchema } from "./admin-data.ts";
+import { authorFromUrl, photoIdFromUrl, stableThumbnailUrl, type Contribution } from "./contributions.ts";
 
 // Formato generado por ../contribExtraction (contribuciones.json).
 const extractionFileSchema = z.object({
@@ -20,6 +21,8 @@ const extractionFileSchema = z.object({
 });
 
 const DATA_DIR = path.join(process.cwd(), "data", "contributions");
+// Lo administrado a mano (panel local, docs/features/panel-admin.md), aparte de lo exportado.
+const ADMIN_DIR = path.join(process.cwd(), "data", "admin");
 
 function isValidPosition(lat: number, lng: number) {
   if (lat === 0 && lng === 0) return false;
@@ -29,10 +32,15 @@ function isValidPosition(lat: number, lng: number) {
 /**
  * Lee todos los JSON de data/contributions/ en tiempo de build,
  * descarta los que no tienen coordenadas válidas y elimina duplicados
- * (misma foto exportada en varias extracciones).
- * `dataDir` solo se cambia en los tests, para leer fixtures ficticios.
+ * (misma foto exportada en varias extracciones). Después aplica data/admin/.
+ * `dataDir` y `adminDir` solo se cambian en los tests y en el panel. Con un `dataDir` propio no se
+ * lee data/admin/ salvo que se pase `adminDir`, para que los tests no dependan de los datos reales;
+ * `adminDir` null no aplica nada (el panel necesita las fotos sin reasignar).
  */
-export function loadContributions(dataDir: string = DATA_DIR): Contribution[] {
+export function loadContributions(
+  dataDir: string = DATA_DIR,
+  adminDir: string | null = dataDir === DATA_DIR ? ADMIN_DIR : null,
+): Contribution[] {
   if (!fs.existsSync(dataDir)) return [];
 
   const byId = new Map<string, Contribution>();
@@ -63,5 +71,17 @@ export function loadContributions(dataDir: string = DATA_DIR): Contribution[] {
     }
   }
 
-  return [...byId.values()];
+  const contributions = [...byId.values()];
+  return adminDir ? applyAdmin(contributions, adminDir) : contributions;
+}
+
+// Los ficheros de data/admin/ los escribe el panel: un formato no válido es un error y para el build.
+function applyAdmin(contributions: Contribution[], adminDir: string): Contribution[] {
+  const authorsPath = path.join(adminDir, AUTHORS_FILE);
+  if (!fs.existsSync(authorsPath)) return contributions;
+  const parsed = authorsFileSchema.safeParse(JSON.parse(fs.readFileSync(authorsPath, "utf8")));
+  if (!parsed.success) {
+    throw new Error(`Formato no válido en data/admin/${AUTHORS_FILE}: ${parsed.error.message}`);
+  }
+  return applyAuthorOverrides(contributions, parsed.data).contributions;
 }

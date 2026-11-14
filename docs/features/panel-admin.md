@@ -4,7 +4,7 @@ Especificación del panel con el que se administran a mano los datos de myTravel
 de fotos concretas, nombres de los viajes, ajustes y posiciones deducidas de los tracks. Está
 escrita para un agente que no conoce el proyecto. Issue: #32.
 
-Estado a 2026-11-14: solo especificación, no hay código de esta feature.
+Estado a 2026-11-14: fase 1 (base del panel + Autores) implementada en #33. Fases 2 y 3 pendientes.
 
 ## 1. Objetivo y principios
 
@@ -90,8 +90,9 @@ Vitest, y la usan tanto el build como el panel, para que los dos vean lo mismo.
   clave y con formato estable, para que el diff de git sea pequeño y legible.
 - Un aviso permanente con los cambios sin commit en `data/admin/` (`git status --porcelain`).
 
-Código en `tools/admin/` (servidor y página) con TypeScript ejecutado por Node
-(`--experimental-strip-types`), sin dependencias nuevas. Es negocio de este proyecto: no va a la
+Código en `tools/admin/` (servidor y página) con TypeScript ejecutado directamente por Node (hace
+falta Node 22.18 o posterior), sin dependencias nuevas. Por eso el proyecto es `"type": "module"`
+y los ficheros de `src/lib/` se importan entre sí con extensión (`./contributions.ts`). Es negocio de este proyecto: no va a la
 plantilla (regla 6).
 
 ## 4. Guardado seguro (decidido)
@@ -149,7 +150,5 @@ Tomadas (2026-11-14):
 4. El panel no guarda en `main`.
 5. Orden: base + Autores → fase 1 de viajes en la web → Viajes y Ajustes → Posiciones.
 
-Pendiente:
-
-- Si cada sesión de administración necesita su propio issue (lo pide el ciclo) o se agrupan en
-  un issue de datos por tanda.
+6. **Las ediciones de datos se agrupan**: una tanda de cambios hechos con el panel va en un solo
+   issue y un solo PR, no un issue por cambio.
