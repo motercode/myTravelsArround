@@ -11,6 +11,7 @@ Se despliega en Netlify como sitio estático generado con Next.js: https://mytra
 - Un punto azul por foto. Al pasar el ratón se ve la miniatura y el autor; al hacer clic se abre la foto en Google Maps (o en su álbum de Google Fotos).
 - Buscador de lugares y POI (Nominatim): al elegir un resultado, el mapa vuela hasta allí.
 - Filtro por autor, con el número de fotos de cada uno.
+- Viajes: un desplegable con los viajes de cada autor agrupados por año. Al elegir uno, el mapa muestra solo sus fotos y se encuadra sobre ellas. Un viaje son días con fotos con 2 días o menos sin fotos entre ellos, según la fecha de cada foto (`takenAt`, que `contribExtraction` exporta con `--dates`).
 - Diseño adaptado a móvil.
 
 ## Uso

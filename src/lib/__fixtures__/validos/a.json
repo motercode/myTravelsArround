@@ -15,7 +15,9 @@
       "coordinates": {
         "latitude": 43.3,
         "longitude": -8.4
-      }
+      },
+      "takenAt": "2020-09-30T07:05:27",
+      "takenAtSource": "exif"
     },
     {
       "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/data=!1sSINCOORDS!2e10"

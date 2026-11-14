@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Map as LeafletMap } from "leaflet";
 import { Loader2, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Contribution } from "@/lib/contributions";
+import type { TripSummary } from "@/lib/trips";
+import { TripPicker } from "./trip-picker";
 
 // Leaflet necesita `window`: solo se renderiza en cliente.
 const TravelMap = dynamic(() => import("./travel-map"), {
@@ -25,7 +27,7 @@ type SearchResult = {
   boundingbox: [string, string, string, string];
 };
 
-export function MapView({ contributions }: { contributions: Contribution[] }) {
+export function MapView({ contributions, trips }: { contributions: Contribution[]; trips: TripSummary[] }) {
   const [map, setMap] = useState<LeafletMap | null>(null);
 
   const authors = useMemo(() => {
@@ -35,18 +37,33 @@ export function MapView({ contributions }: { contributions: Contribution[] }) {
   }, [contributions]);
 
   const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [tripId, setTripId] = useState<string | null>(null);
   const visible = useMemo(
-    () => contributions.filter((c) => !hidden.has(c.author)),
-    [contributions, hidden],
+    () => contributions.filter((c) => !hidden.has(c.author) && (tripId === null || c.tripId === tripId)),
+    [contributions, hidden, tripId],
   );
+  // Solo los viajes de los autores que se ven.
+  const visibleTrips = useMemo(() => trips.filter((t) => !hidden.has(t.author)), [trips, hidden]);
 
-  const toggleAuthor = (author: string) =>
+  const toggleAuthor = (author: string) => {
+    // Si se oculta el autor del viaje elegido, el viaje deja de estar elegido.
+    if (!hidden.has(author) && trips.find((t) => t.id === tripId)?.author === author) setTripId(null);
     setHidden((prev) => {
       const next = new Set(prev);
       if (next.has(author)) next.delete(author);
       else next.add(author);
       return next;
     });
+  };
+
+  // Al elegir un viaje, el mapa se encuadra sobre sus fotos (como el encuadre inicial).
+  useEffect(() => {
+    if (!map || tripId === null || visible.length === 0) return;
+    map.fitBounds(
+      visible.map((c) => [c.lat, c.lng] as [number, number]),
+      { padding: [40, 40], maxZoom: 15 },
+    );
+  }, [map, tripId]); // eslint-disable-line react-hooks/exhaustive-deps -- solo al cambiar de viaje
 
   // Búsqueda de POI con Nominatim (solo al enviar: su política limita a 1 req/s).
   const [query, setQuery] = useState("");
@@ -125,6 +142,10 @@ export function MapView({ contributions }: { contributions: Contribution[] }) {
               ))}
             </ul>
           )}
+
+          <div className="mt-3 border-t pt-3">
+            <TripPicker trips={visibleTrips} selectedId={tripId} onSelect={setTripId} />
+          </div>
 
           <div className="mt-3 flex flex-col gap-1.5 border-t pt-3">
             {authors.map(([author, count]) => (

@@ -2,7 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { applyAuthorOverrides, AUTHORS_FILE, authorsFileSchema } from "./admin-data.ts";
-import { authorFromUrl, photoIdFromUrl, stableThumbnailUrl, type Contribution } from "./contributions.ts";
+import {
+  authorFromUrl,
+  photoIdFromUrl,
+  stableThumbnailUrl,
+  TAKEN_AT_SOURCES,
+  type Contribution,
+  type TakenAtSource,
+} from "./contributions.ts";
 
 // Formato generado por ../contribExtraction (contribuciones.json).
 const extractionFileSchema = z.object({
@@ -16,6 +23,9 @@ const extractionFileSchema = z.object({
         .object({ latitude: z.number(), longitude: z.number() })
         .nullable()
         .optional(),
+      // Se validan aparte: una fecha rara deja la foto sin fecha, no rompe el build.
+      takenAt: z.string().optional(),
+      takenAtSource: z.string().optional(),
     }),
   ),
 });
@@ -23,6 +33,14 @@ const extractionFileSchema = z.object({
 const DATA_DIR = path.join(process.cwd(), "data", "contributions");
 // Lo administrado a mano (panel local, docs/features/panel-admin.md), aparte de lo exportado.
 const ADMIN_DIR = path.join(process.cwd(), "data", "admin");
+
+const TAKEN_AT_FORMAT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?$/;
+
+function takenAtFields(takenAt?: string, source?: string): Pick<Contribution, "takenAt" | "takenAtSource"> {
+  if (!takenAt || !TAKEN_AT_FORMAT.test(takenAt)) return {};
+  const takenAtSource = TAKEN_AT_SOURCES.find((s) => s === source) as TakenAtSource | undefined;
+  return takenAtSource ? { takenAt, takenAtSource } : { takenAt };
+}
 
 function isValidPosition(lat: number, lng: number) {
   if (lat === 0 && lng === 0) return false;
@@ -60,6 +78,9 @@ export function loadContributions(
       // y no debe reemplazar sus fotos.
       const author = authorFromUrl(item.url);
       const id = `${author}:${photoIdFromUrl(item.url) ?? item.url}`;
+      const dates = takenAtFields(item.takenAt, item.takenAtSource);
+      // Gana la última copia, salvo que ella no tenga fecha y la anterior sí.
+      if (!dates.takenAt && byId.get(id)?.takenAt) continue;
       byId.set(id, {
         id,
         lat: coords.latitude,
@@ -67,6 +88,7 @@ export function loadContributions(
         author,
         mapsUrl: item.mapsUrlCanonical ?? item.url,
         imageUrl: item.imageUrl ? stableThumbnailUrl(item.imageUrl) : undefined,
+        ...dates,
       });
     }
   }

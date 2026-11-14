@@ -17,7 +17,16 @@ export type Contribution = {
   author: string;
   mapsUrl: string;
   imageUrl?: string;
+  // Fecha de la foto tal como viene del export (hora local sin zona, o solo el día). No es
+  // `capturedAt`, que es cuándo se extrajo.
+  takenAt?: string;
+  takenAtSource?: TakenAtSource;
+  // Viaje al que pertenece (fase 1 de viajes); lo rellena el build.
+  tripId?: string;
 };
+
+export const TAKEN_AT_SOURCES = ["exif", "photometa", "album"] as const;
+export type TakenAtSource = (typeof TAKEN_AT_SOURCES)[number];
 
 // Las fotos cuya URL no dice el autor (las de álbumes compartidos de Google Fotos,
 // photos.google.com/share/...) son de motercode: así lo decidió el usuario (#7).
