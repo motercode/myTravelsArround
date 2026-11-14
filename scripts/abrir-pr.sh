@@ -4,15 +4,17 @@
 # como evidencia. Las casillas de lint, build y tests se marcan según ese informe; el resto se
 # marca con -x cuando el agente o la persona lo ha comprobado.
 #
-# Uso: scripts/abrir-pr.sh -T "feat(map): título en español (#N)" -c cambios.md [-d] [-x texto]...
+# Uso: scripts/abrir-pr.sh -T "feat(map): título en español (#N)" -c cambios.md [-d] [-r] [-x texto]...
 #   -d        PR en borrador
+#   -r        «Refs #N» en lugar de «Closes #N»: el PR no cierra el issue (p. ej. solo la
+#             especificación de una feature, o una fase de varias)
 #   -x texto  marca la casilla que contiene «texto» (repetible), p. ej. -x "Ningún secreto"
 source "$(dirname "$0")/lib/comun.sh"
 
-titulo="" cambios="" borrador=() extras=()
-while getopts "T:c:dx:" opt; do
+titulo="" cambios="" borrador=() extras=() referencia="Closes"
+while getopts "T:c:drx:" opt; do
   case "$opt" in
-    T) titulo="$OPTARG" ;; c) cambios="$OPTARG" ;; d) borrador=(--draft) ;; x) extras+=("$OPTARG") ;;
+    T) titulo="$OPTARG" ;; c) cambios="$OPTARG" ;; d) borrador=(--draft) ;; r) referencia="Refs" ;; x) extras+=("$OPTARG") ;;
     *) error "opción no válida (mira la cabecera del script)" ;;
   esac
 done
@@ -40,7 +42,7 @@ marcar() {
 cuerpo="$(mktemp)"
 trap 'rm -f "$cuerpo"' EXIT
 cp .github/pull_request_template.md "$cuerpo"
-sed -i "s/^Closes #$/Closes #$issue/" "$cuerpo"
+sed -i "s/^Closes #$/$referencia #$issue/" "$cuerpo"
 # Descripción de los cambios justo debajo del título de la sección.
 sed -i "/^## Cambios$/r $cambios" "$cuerpo"
 grep -q '^### ✅ npm run lint' "$INFORME" && marcar 'npm run lint'

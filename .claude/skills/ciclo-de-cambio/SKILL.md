@@ -54,7 +54,8 @@ si un script falla o necesitas sus opciones.
    plantilla o negocio). Para cada una que sea cierta, pasa `-x "<texto de la casilla>"`; si no
    aplica, dilo en «Cambios».
 3. `scripts/abrir-pr.sh -T "<tipo>(<ámbito>): título en español (#N)" -c <fichero> -x "Ningún secreto" -x "separado del negocio"`
-   (`-d` para borrador).
+   (`-d` para borrador; `-r` si el PR no cierra el issue, como una especificación o una fase
+   de varias: pone `Refs #N` en lugar de `Closes #N`). Usa el mismo `-r` al actualizar el PR.
 4. Tras nuevos commits en la rama: `scripts/comprobar.sh` y el mismo `abrir-pr.sh`, que actualiza
    el PR abierto con la evidencia nueva.
 5. Da al usuario el enlace del PR.
