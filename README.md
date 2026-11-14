@@ -3,7 +3,7 @@
 Mapa web con las fotos públicas que **motercode** y **fernando gost** han subido a Google Maps.
 Cada foto es un punto azul sobre OpenStreetMap; al pulsarlo se abre esa foto en Google Maps en una pestaña nueva.
 
-Se despliega en Netlify como sitio estático generado con Next.js.
+Se despliega en Netlify como sitio estático generado con Next.js: https://mytravelsarround.netlify.app/
 
 ## Funcionalidades
 
@@ -65,7 +65,7 @@ Al hacer clic se abre `mapsUrlCanonical` (el visor general de Maps). Si no exist
 ## Despliegue en Netlify
 
 Toda la configuración está en `netlify.toml`: el build ejecuta `npm run build`, publica `.next` y usa Node 22 con el adaptador `@netlify/plugin-nextjs`.
-Basta con importar el repositorio `motercode/myTravelsArround` desde GitHub en Netlify; cada push a la rama principal vuelve a desplegar.
+Basta con importar el repositorio `motercode/myTravelsArround` desde GitHub en Netlify; cada push a `main` vuelve a desplegar en https://mytravelsarround.netlify.app/.
 
 No hace falta configurar variables de entorno ni claves de API.
 
