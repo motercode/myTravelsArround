@@ -1,8 +1,10 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { canvas, type LatLngBoundsExpression, type Map as LeafletMap } from "leaflet";
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
+import { useMemo, useState } from "react";
+import { canvas, divIcon, type LatLngBoundsExpression, type Map as LeafletMap } from "leaflet";
+import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { buildClusterIndex, clusterBBox, clusterSize, type PointProps } from "@/lib/clusters";
 import type { Contribution } from "@/lib/contributions";
 
 const SPAIN_BOUNDS: LatLngBoundsExpression = [
@@ -34,6 +36,74 @@ function initialBounds(points: Contribution[]): LatLngBoundsExpression {
   ];
 }
 
+// Grupo de fotos: círculo con el número, más grande cuantas más fotos tiene. HTML fijo con estilos
+// en línea porque Leaflet lo inserta fuera de React.
+function clusterIcon(count: number, label: string | number) {
+  const size = clusterSize(count);
+  return divIcon({
+    className: "",
+    iconSize: [size, size],
+    html: `<div class="marker-cluster" style="width:${size}px;height:${size}px;border-radius:9999px;background:rgba(37,99,235,.85);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);color:#fff;font:600 12px/1 system-ui,sans-serif;display:flex;align-items:center;justify-content:center">${label}</div>`,
+  });
+}
+
+function viewOf(map: LeafletMap) {
+  // Un 20 % de margen alrededor para que al mover el mapa no aparezcan huecos antes de recalcular.
+  const b = map.getBounds().pad(0.2);
+  return { bbox: clusterBBox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth()), zoom: Math.round(map.getZoom()) };
+}
+
+// Solo dibuja los grupos y las fotos del área visible; se recalcula al terminar de mover el mapa.
+function ClusteredMarkers({ contributions }: { contributions: Contribution[] }) {
+  const map = useMap();
+  const index = useMemo(() => buildClusterIndex(contributions), [contributions]);
+  const [view, setView] = useState(() => viewOf(map));
+  useMapEvents({ moveend: () => setView(viewOf(map)) });
+  const features = useMemo(() => index.getClusters(view.bbox, view.zoom), [index, view]);
+
+  return features.map((feature) => {
+    const [lng, lat] = feature.geometry.coordinates;
+    if ("cluster" in feature.properties && feature.properties.cluster) {
+      const { cluster_id, point_count, point_count_abbreviated } = feature.properties;
+      return (
+        <Marker
+          key={`g${cluster_id}`}
+          position={[lat, lng]}
+          icon={clusterIcon(point_count, point_count_abbreviated)}
+          eventHandlers={{
+            click: () => map.flyTo([lat, lng], Math.min(index.getClusterExpansionZoom(cluster_id), 19)),
+          }}
+        >
+          <Tooltip direction="top">{point_count} fotos · clic para acercar</Tooltip>
+        </Marker>
+      );
+    }
+    const c = contributions[(feature.properties as PointProps).index];
+    return (
+      <CircleMarker
+        key={c.id}
+        center={[c.lat, c.lng]}
+        radius={MARKER_RADIUS}
+        pathOptions={MARKER_STYLE}
+        eventHandlers={{
+          click: () => window.open(c.mapsUrl, "_blank", "noopener,noreferrer"),
+        }}
+      >
+        <Tooltip direction="top" offset={[0, -6]}>
+          <div className="flex w-48 flex-col gap-1">
+            {c.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={c.imageUrl} alt="" className="h-28 w-48 rounded object-cover" loading="lazy" />
+            )}
+            <span className="text-xs font-medium">{c.author}</span>
+            <span className="text-[10px] text-neutral-500">Clic para abrir en Google Maps</span>
+          </div>
+        </Tooltip>
+      </CircleMarker>
+    );
+  });
+}
+
 export default function TravelMap({
   contributions,
   onReady,
@@ -57,28 +127,7 @@ export default function TravelMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
-      {contributions.map((c) => (
-        <CircleMarker
-          key={c.id}
-          center={[c.lat, c.lng]}
-          radius={MARKER_RADIUS}
-          pathOptions={MARKER_STYLE}
-          eventHandlers={{
-            click: () => window.open(c.mapsUrl, "_blank", "noopener,noreferrer"),
-          }}
-        >
-          <Tooltip direction="top" offset={[0, -6]}>
-            <div className="flex w-48 flex-col gap-1">
-              {c.imageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.imageUrl} alt="" className="h-28 w-48 rounded object-cover" loading="lazy" />
-              )}
-              <span className="text-xs font-medium">{c.author}</span>
-              <span className="text-[10px] text-neutral-500">Clic para abrir en Google Maps</span>
-            </div>
-          </Tooltip>
-        </CircleMarker>
-      ))}
+      <ClusteredMarkers contributions={contributions} />
     </MapContainer>
   );
 }
