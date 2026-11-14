@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadContributions } from "@/lib/load-contributions";
+import { loadContributions, loadTripAdmin } from "@/lib/load-contributions";
 
 // Fixtures ficticios: los datos reales de data/contributions/ no se usan en los tests.
 const FIXTURES = path.join(__dirname, "__fixtures__");
@@ -85,5 +85,25 @@ describe("loadContributions", () => {
 
   it("falla con el nombre del fichero si el formato no es válido", () => {
     expect(() => loadContributions(path.join(FIXTURES, "invalidos"))).toThrow(/roto\.json/);
+  });
+});
+
+describe("loadTripAdmin", () => {
+  it("lee viajes.json y ajustes.json", () => {
+    const { rules, settings } = loadTripAdmin(path.join(FIXTURES, "admin-viajes"));
+    expect(rules.operations).toEqual([{ type: "split", author: "testA", at: "2020-09-30T12:00:00" }]);
+    expect(rules.names[0].name).toBe("Prueba");
+    expect(settings.maxEmptyDaysInTrip).toBe(5);
+  });
+
+  it("sin ficheros, sin reglas y con el umbral por defecto", () => {
+    expect(loadTripAdmin(path.join(FIXTURES, "no-existe"))).toEqual({
+      rules: { version: 1, operations: [], names: [] },
+      settings: { version: 1, maxEmptyDaysInTrip: 2 },
+    });
+  });
+
+  it("falla con el nombre del fichero si viajes.json no es válido", () => {
+    expect(() => loadTripAdmin(path.join(FIXTURES, "admin-viajes-invalido"))).toThrow(/admin\/viajes\.json/);
   });
 });

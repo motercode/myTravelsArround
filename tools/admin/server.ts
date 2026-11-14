@@ -14,11 +14,21 @@ import {
   authorsFileSchema,
   emptyAuthorsFile,
   serializeAuthorsFile,
+  mergeTrips,
+  nameTrip,
+  serializeAdminFile,
   setAuthors,
+  SETTINGS_FILE,
+  settingsFileSchema,
+  splitTrip,
+  TRIPS_FILE,
   type AuthorsFile,
+  type SettingsFile,
+  type TripsFile,
 } from "../../src/lib/admin-data.ts";
-import { AUTHORS } from "../../src/lib/contributions.ts";
-import { loadContributions } from "../../src/lib/load-contributions.ts";
+import { AUTHORS, type Contribution } from "../../src/lib/contributions.ts";
+import { loadContributions, loadTripAdmin } from "../../src/lib/load-contributions.ts";
+import { buildTripsWithRules } from "../../src/lib/trips.ts";
 
 const RAIZ = path.resolve(import.meta.dirname, "..", "..");
 const { values: args } = parseArgs({
@@ -80,20 +90,107 @@ function estadoGit(): EstadoGit {
   return { rama, puedeGuardar: true, motivo: null, cambios };
 }
 
+// Fotos con los autores ya reasignados: los viajes se agrupan por el autor final, como en el build.
+function fotosConAutores(): Contribution[] {
+  return applyAuthorOverrides(FOTOS, leerAutores()).contributions;
+}
+
 function estado() {
   const autores = leerAutores();
   const { contributions, orphanIds } = applyAuthorOverrides(FOTOS, autores);
+  const { rules, settings } = loadTripAdmin(ADMIN);
+  const { trips, orphanOperations, orphanNames } = buildTripsWithRules(contributions, rules, settings.maxEmptyDaysInTrip);
+  const viajeDe = new Map<string, number>();
+  trips.forEach((t, i) => t.photoIds.forEach((id) => viajeDe.set(id, i)));
   return {
     git: estadoGit(),
     autores: Object.values(AUTHORS),
     reasignadas: autores.photos,
     huerfanas: orphanIds,
-    // Compacto: unas 20 000 fotos. [id, lat, lng, autor final, url, miniatura]
-    fotos: contributions.map((f) => [f.id, f.lat, f.lng, f.author, f.mapsUrl, f.imageUrl ?? null]),
+    ajustes: settings,
+    viajes: trips.map((t) => ({
+      id: t.id,
+      autor: t.author,
+      inicio: t.startDay,
+      fin: t.endDay,
+      primera: t.firstTakenAt,
+      ultima: t.lastTakenAt,
+      nombre: t.name ?? null,
+      dias: t.days.length,
+      fotos: t.photoIds.length,
+    })),
+    // Reglas de viajes.json que ya no caen en ningún viaje: no hacen nada y se pueden quitar.
+    reglasHuerfanas: [
+      ...orphanOperations.map((i) => ({ tipo: "operacion", indice: i, regla: rules.operations[i] })),
+      ...orphanNames.map((i) => ({ tipo: "nombre", indice: i, regla: rules.names[i] })),
+    ],
+    // Compacto: unas 20 000 fotos. [id, lat, lng, autor final, url, miniatura, índice en viajes o -1, fecha o null]
+    fotos: contributions.map((f) => [
+      f.id,
+      f.lat,
+      f.lng,
+      f.author,
+      f.mapsUrl,
+      f.imageUrl ?? null,
+      viajeDe.get(f.id) ?? -1,
+      f.takenAt ?? null,
+    ]),
   };
 }
 
-function guardarAutores(cuerpo: unknown) {
+type Respuesta = { status: number; body: unknown };
+
+// Todas las escrituras pasan por aquí: en main o fuera de git no se guarda nada.
+function guardarFichero(fichero: string, contenido: string): Respuesta {
+  fs.mkdirSync(ADMIN, { recursive: true });
+  fs.writeFileSync(path.join(ADMIN, fichero), contenido);
+  return { status: 200, body: estado() };
+}
+
+function cambiarViajes(cambio: (fotos: Contribution[], reglas: TripsFile, ajustes: SettingsFile) => TripsFile): Respuesta {
+  const repo = estadoGit();
+  if (!repo.puedeGuardar) return { status: 409, body: { error: repo.motivo } };
+  const { rules, settings } = loadTripAdmin(ADMIN);
+  let nuevo: TripsFile;
+  try {
+    nuevo = cambio(fotosConAutores(), rules, settings);
+  } catch (error) {
+    return { status: 400, body: { error: (error as Error).message } };
+  }
+  return guardarFichero(TRIPS_FILE, serializeAdminFile(nuevo));
+}
+
+const texto = (v: unknown) => (typeof v === "string" ? v : null);
+
+const ACCIONES_VIAJES: Record<string, (cuerpo: Record<string, unknown>) => Respuesta> = {
+  nombre: ({ id, nombre }) =>
+    cambiarViajes((f, r, a) => nameTrip(f, r, a.maxEmptyDaysInTrip, String(id), texto(nombre))),
+  unir: ({ ids }) =>
+    cambiarViajes((f, r, a) => {
+      if (!Array.isArray(ids) || ids.length !== 2) throw new Error("Elige dos viajes para unirlos.");
+      return mergeTrips(f, r, a.maxEmptyDaysInTrip, [String(ids[0]), String(ids[1])]);
+    }),
+  separar: ({ id, momento }) =>
+    cambiarViajes((f, r, a) => splitTrip(f, r, a.maxEmptyDaysInTrip, String(id), String(momento ?? ""))),
+  "quitar-regla": ({ tipo, indice }) =>
+    cambiarViajes((_f, r) => {
+      const lista = tipo === "operacion" ? r.operations : tipo === "nombre" ? r.names : null;
+      if (!lista || typeof indice !== "number" || !lista[indice]) throw new Error("Esa regla no existe.");
+      return tipo === "operacion"
+        ? { ...r, operations: r.operations.filter((_, i) => i !== indice) }
+        : { ...r, names: r.names.filter((_, i) => i !== indice) };
+    }),
+};
+
+function guardarAjustes(cuerpo: Record<string, unknown>): Respuesta {
+  const repo = estadoGit();
+  if (!repo.puedeGuardar) return { status: 409, body: { error: repo.motivo } };
+  const parsed = settingsFileSchema.safeParse({ version: 1, maxEmptyDaysInTrip: cuerpo.maxEmptyDaysInTrip });
+  if (!parsed.success) return { status: 400, body: { error: "Los días tienen que ser un número entero entre 0 y 60." } };
+  return guardarFichero(SETTINGS_FILE, serializeAdminFile(parsed.data));
+}
+
+function guardarAutores(cuerpo: unknown): Respuesta {
   const repo = estadoGit();
   if (!repo.puedeGuardar) return { status: 409, body: { error: repo.motivo } };
   const { ids, autor } = (cuerpo ?? {}) as { ids?: unknown; autor?: unknown };
@@ -107,9 +204,7 @@ function guardarAutores(cuerpo: unknown) {
   } catch (error) {
     return { status: 400, body: { error: (error as Error).message } };
   }
-  fs.mkdirSync(ADMIN, { recursive: true });
-  fs.writeFileSync(path.join(ADMIN, AUTHORS_FILE), serializeAuthorsFile(nuevo));
-  return { status: 200, body: estado() };
+  return guardarFichero(AUTHORS_FILE, serializeAuthorsFile(nuevo));
 }
 
 const TIPOS: Record<string, string> = {
@@ -139,7 +234,15 @@ const servidor = http.createServer((req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
   try {
     if (req.method === "GET" && url.pathname === "/api/estado") return json(res, 200, estado());
-    if (req.method === "POST" && url.pathname === "/api/autores") {
+    const accion =
+      url.pathname === "/api/autores"
+        ? guardarAutores
+        : url.pathname === "/api/ajustes"
+          ? guardarAjustes
+          : url.pathname.startsWith("/api/viajes/")
+            ? ACCIONES_VIAJES[url.pathname.slice("/api/viajes/".length)]
+            : undefined;
+    if (req.method === "POST" && accion) {
       let cuerpo = "";
       req.on("data", (trozo) => (cuerpo += trozo));
       req.on("end", () => {
@@ -149,8 +252,12 @@ const servidor = http.createServer((req, res) => {
         } catch {
           return json(res, 400, { error: "JSON no válido." });
         }
-        const { status, body } = guardarAutores(datos);
-        json(res, status, body);
+        try {
+          const { status, body } = accion((datos ?? {}) as Record<string, unknown>);
+          json(res, status, body);
+        } catch (error) {
+          json(res, 500, { error: (error as Error).message });
+        }
       });
       return;
     }

@@ -2,11 +2,21 @@
   "items": [
     {
       "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@40.4,-3.7/data=!3m1!1sFOTO1!2e10",
-      "coordinates": { "latitude": 40.4, "longitude": -3.7 }
+      "coordinates": { "latitude": 40.4, "longitude": -3.7 },
+      "takenAt": "2024-05-01T10:00:00",
+      "takenAtSource": "exif"
     },
     {
       "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@41.4,2.2/data=!3m1!1sFOTO2!2e10",
-      "coordinates": { "latitude": 41.4, "longitude": 2.2 }
+      "coordinates": { "latitude": 41.4, "longitude": 2.2 },
+      "takenAt": "2024-05-02T18:00:00",
+      "takenAtSource": "exif"
+    },
+    {
+      "url": "https://www.google.com/maps/contrib/999999999999999999999/photos/@43.3,-8.4/data=!3m1!1sFOTO3!2e10",
+      "coordinates": { "latitude": 43.3, "longitude": -8.4 },
+      "takenAt": "2024-05-20T09:00:00",
+      "takenAtSource": "exif"
     },
     {
       "url": "https://photos.google.com/share/ALBUMFICTICIO/photo/FOTOALBUM1?key=CLAVEFICTICIA",

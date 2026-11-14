@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "operations": [{ "type": "split", "author": "testA", "at": "2020-09-30T12:00:00" }],
+  "names": [{ "author": "testA", "at": "2020-09-30T07:05:27", "name": "Prueba" }]
+}
