@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "datos:origen": "node tools/datos/origen-urls.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

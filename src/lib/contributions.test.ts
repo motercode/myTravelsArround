@@ -3,6 +3,8 @@ import { authorFromUrl, photoIdFromUrl, stableThumbnailUrl } from "@/lib/contrib
 
 // Identificadores ficticios: 999… es el autor de prueba (testA) de AUTHORS.
 const URL_TEST_A = "https://www.google.com/maps/contrib/999999999999999999999/photos/data=!3m1!1sFOTO1!2e10";
+// Álbum compartido de Google Fotos ficticio.
+const URL_ALBUM = "https://photos.google.com/share/ALBUMFICTICIO/photo/FOTOALBUM1?key=CLAVEFICTICIA";
 
 describe("authorFromUrl", () => {
   it("devuelve el nombre del autor conocido", () => {
@@ -13,14 +15,22 @@ describe("authorFromUrl", () => {
     expect(authorFromUrl("https://www.google.com/maps/contrib/111/photos")).toBe("111");
   });
 
-  it("devuelve «desconocido» si la URL no es de una contribución", () => {
-    expect(authorFromUrl("https://example.com/foto")).toBe("desconocido");
+  it("asigna a motercode las fotos cuya URL no dice el autor", () => {
+    expect(authorFromUrl("https://example.com/foto")).toBe("motercode");
+  });
+
+  it("asigna a motercode las fotos de álbumes de Google Fotos", () => {
+    expect(authorFromUrl(URL_ALBUM)).toBe("motercode");
   });
 });
 
 describe("photoIdFromUrl", () => {
   it("extrae el photoId del bloque !1s…!", () => {
     expect(photoIdFromUrl(URL_TEST_A)).toBe("FOTO1");
+  });
+
+  it("extrae el photoId de una foto de álbum de Google Fotos, sin la clave del álbum", () => {
+    expect(photoIdFromUrl(URL_ALBUM)).toBe("FOTOALBUM1");
   });
 
   it("devuelve undefined si no hay photoId", () => {

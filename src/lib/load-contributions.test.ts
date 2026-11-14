@@ -10,7 +10,7 @@ describe("loadContributions", () => {
   const porId = (id: string) => contributions.find((c) => c.id === id);
 
   it("descarta los items sin coordenadas, en 0,0 o fuera de rango", () => {
-    expect(contributions.map((c) => c.id).sort()).toEqual(["111111111111111111111:FOTO1", "testA:FOTO1", "testA:FOTO2"]);
+    expect(contributions.map((c) => c.id).sort()).toEqual(["111111111111111111111:FOTO1", "motercode:FOTOALBUM1", "testA:FOTO1", "testA:FOTO2"]);
   });
 
   it("elimina la misma foto repetida entre ficheros y se queda con la última", () => {
@@ -19,6 +19,16 @@ describe("loadContributions", () => {
 
   it("no mezcla fotos con el mismo photoId de autores distintos", () => {
     expect(porId("111111111111111111111:FOTO1")).toMatchObject({ author: "111111111111111111111", lat: 37.4, lng: -5.9 });
+  });
+
+  it("las fotos de álbum son de motercode, se deduplican por su photoId y abren el álbum", () => {
+    expect(porId("motercode:FOTOALBUM1")).toMatchObject({
+      author: "motercode",
+      lat: 46.9,
+      lng: 11.9,
+      mapsUrl: "https://photos.google.com/share/ALBUMFICTICIO/photo/FOTOALBUM1?key=CLAVEFICTICIA",
+      imageUrl: "https://lh3.googleusercontent.com/pw/FICTICIA3=w400-h240-p-k-no",
+    });
   });
 
   it("usa la URL canónica y la miniatura estable si existen", () => {
