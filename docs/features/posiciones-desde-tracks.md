@@ -33,8 +33,11 @@ herramienta deja en `data/contributions/`.
   `"YYYY-MM-DD"` (solo día). Está en 27 585 de 27 826 items.
 - `takenAtSource`: `"exif"` o `"photometa"`.
 
-Solo sirven las fotos con **hora** (`takenAt` con `T`). Las de solo día y las que no tienen
-`takenAt` quedan fuera del cruce.
+Solo las fotos con **hora** (`takenAt` con `T`) entran en el cruce automático. Las de solo día y
+las que no tienen `takenAt` son **huérfanas de hora**: se colocan a mano en la fase 3 (sección 6.1).
+
+Se cruzan las fotos de **los dos autores** (motercode y fernando gost). Las fotos sin autor (por
+ejemplo, las de álbumes de Google Fotos, #7) se tratan como de **motercode**.
 
 ### 2.2 Tracks
 
@@ -57,8 +60,8 @@ Ruido que hay que ignorar: `josm.jnlp`, `*.desktop`, `*.qgz`, `DumpStack.log.tmp
 - Lo único que se publica es la coordenada final de fotos que **ya son públicas**, en el campo
   `trackMatch` (sección 7). `trackMatch` no lleva puntos del track ni nada que permita
   reconstruirlo.
-- `scripts/comprobar.sh` debería fallar si aparece en el repositorio algún `*.gpx`, `*.kml`,
-  `*.kmz` o `*.gpkg` (añadir la comprobación en la fase 1).
+- Impedir que entren ficheros de tracks en el repositorio (`*.gpx`, `*.kml`, `*.kmz`, `*.gpkg`)
+  con una comprobación en `scripts/comprobar.sh`: pendiente de pensar en #25.
 - Al cerrar la fase 2, apuntar en «Decisiones del proyecto» del README que las posiciones
   deducidas salen de tracks privados que no se publican.
 
@@ -71,25 +74,44 @@ Comando: `npm run tracks:preparar -- [--origen ../tracks]`.
    `<description>` como en `kml.kml`), GPKG (tabla de puntos con hora) y el JSON del Takeout
    (`activitySegment` con `waypointPath`/`simplifiedRawPath` y `placeVisit` con `location` y
    `duration`).
-3. **Descartar los ficheros sin horas** (rutas planificadas). Salen en el informe, no son un error.
+3. **Tracks sin horas** (rutas planificadas, «Cómo llegar a…»): **se incluyen**, con una hora
+   inicial propuesta (sección 4.1).
 4. **Quitar duplicados**:
    - de ficheros, por SHA-1 (aprovechar `indice.csv`);
    - de puntos, por hora al segundo + lat/lng redondeadas a 5 decimales (~1 m).
-5. **Ordenar** por hora y guardar en `../tracks/procesado/puntos.sqlite` (con `node:sqlite`, sin
-   dependencias nativas). Cada punto es `{ t, lat, lng, precisión?, track }`, con `t` en UTC.
-6. **Track** = el fichero de origen. Un fichero muy largo (como `kml.kml` o un mes del Takeout) se
-   parte en tracks por **día UTC** para que los ajustes de la fase 2 sean manejables.
-7. **Informe** en `../tracks/procesado/informe.md`: ficheros leídos, descartados (y por qué),
-   duplicados, puntos por año y huecos grandes.
+5. **Ordenar** por hora.
+6. **Simplificar**: entre dos puntos que se conservan tiene que haber **al menos 5 minutos**. Se
+   recorre cada track en orden y se borra todo punto a menos de 5 minutos del último conservado.
+   El primer y el último punto de cada trozo (paso 7) se conservan siempre.
+7. **Partir en trozos de 4 horas**: cada track es un trozo de 4 h, alineado a las horas UTC
+   múltiplo de 4 (00, 04, 08, 12, 16, 20) para que el id no cambie entre ejecuciones:
+   `<origen>_<YYYYMMDD>-<HH>` (p. ej. `kml_20170316-12`). Es la unidad a la que se aplican los
+   ajustes de la fase 2.
+8. **Guardar** en `../tracks/procesado/puntos.sqlite` (con `node:sqlite`, sin dependencias
+   nativas). Cada punto es `{ t, lat, lng, precisión?, track }`, con `t` en UTC.
+9. **Informe** en `../tracks/procesado/informe.md`: ficheros leídos y descartados (y por qué),
+   duplicados, puntos antes y después de simplificar, trozos por año y tracks con hora asignada.
 
 Zonas horarias al leer: GPX y Takeout vienen en UTC (`Z` u offset explícito). Las horas de
-`kml.kml` no llevan zona: se asumen UTC, que es lo que exporta el historial de ubicaciones, y se
-confirma en la fase 2 con fotos de posición conocida.
+`kml.kml` no llevan zona y **son UTC** (confirmado).
+
+### 4.1 Tracks sin horas
+
+- La herramienta **propone una hora inicial**: la de la foto con hora más antigua que esté a
+  menos de 200 m del primer punto de la ruta. Si no hay ninguna, el track queda **sin hora** y no
+  se usa en el cruce hasta que se le asigne una a mano (fase 3).
+- Las horas de los demás puntos se reparten por distancia recorrida a velocidad constante de
+  30 km/h desde la hora inicial. Después se simplifica y se parte como cualquier otro track.
+- En `ajustes.json` el track queda marcado con `horaAsignada: true`. La hora inicial se corrige
+  igual que el desfase de cualquier track (sección 5.4).
 
 ### Criterios de aceptación (fase 1)
 
 - Leer dos veces los mismos ficheros da el mismo número de puntos (los duplicados no suman).
-- Un GPX sin `<time>` sale en el informe como descartado.
+- Tras simplificar, no hay dos puntos seguidos de un mismo trozo a menos de 5 minutos.
+- Un track de 09:00 a 17:30 UTC sale en tres trozos: `-08`, `-12` y `-16`.
+- Un GPX sin `<time>` con una foto cerca de su inicio recibe la hora de esa foto; sin foto cerca,
+  sale en el informe como sin hora.
 - Tests unitarios de cada lector con ficheros ficticios pequeños en `tools/tracks/fixtures/`.
 
 ## 5. Fase 2: cruce automático
@@ -111,9 +133,11 @@ Comando: `npm run tracks:cruzar`.
 
 ### 5.2 Posición deducida (P)
 
-Interpolación lineal entre los dos puntos del track que rodean `horaUTC`. Si el hueco entre esos
-dos puntos supera **10 minutos**, se usa el más cercano solo si está a menos de 10 minutos; si no,
-la foto queda **sin match** (no se escribe `trackMatch`).
+Interpolación lineal entre los dos puntos del track que rodean `horaUTC`. Si la hora cae fuera
+de todos los tracks, la foto queda **sin match** (no se escribe `trackMatch`).
+
+Qué hacer cuando entre esos dos puntos hay un **hueco** grande (GPS apagado, sin cobertura) está
+pendiente de pensar en #24, que bloquea esta fase.
 
 ### 5.3 Fiabilidad (zona Z1)
 
@@ -135,7 +159,8 @@ Casos especiales, siempre `pending`:
   `reliability` se omite y P queda como propuesta.
 
 Constantes en un único sitio: `VELOCIDAD_Z1_KMH = 30`, `UMBRAL_AUTO = 0.95`,
-`MAX_DT_HORAS = 12`, `MAX_HUECO_TRACK_MIN = 10`.
+`MAX_DT_HORAS = 12`, `DISTANCIA_CONFIRMADA_M = 200`, y las de la fase 1:
+`INTERVALO_MIN_PUNTOS_MIN = 5`, `TROZO_HORAS = 4`.
 
 ### 5.4 Ajustes que se arrastran
 
@@ -150,9 +175,9 @@ desde el mapa en la fase 3):
 
 ### 5.5 Qué fotos se cruzan
 
-Todas las que tienen hora y un track que cubre esa hora. Si la foto ya tiene `coordinates`
-válidas y P está a **menos de 200 m** de ellas, se considera confirmada y no se escribe
-`trackMatch` (propuesta; ver sección 9).
+Todas las que tienen hora y un track que cubre esa hora, de los dos autores (sección 2.1). Si la
+foto ya tiene `coordinates` válidas y P está a **menos de 200 m** de ellas, se considera
+confirmada y no se escribe `trackMatch`.
 
 ### Criterios de aceptación (fase 2)
 
@@ -183,8 +208,21 @@ proyecto) y una pequeña API para leer las fotos `pending` y guardar decisiones.
   de Leaflet.
 - **Ajustes del track** (zona horaria y desfase) desde la página, con recálculo y aviso como en la
   sección 5.4.
+- **Hora inicial** de los tracks sin hora (sección 4.1): aceptar la propuesta o escribir otra.
 - Cada decisión se escribe al momento en el `data/contributions/*.json` de la foto, sin reordenar
   ni reformatear el resto del fichero, para que el diff de git sea pequeño.
+
+### 6.1 Fotos huérfanas de hora
+
+Las fotos con solo día (`takenAt` = `"YYYY-MM-DD"`) o sin `takenAt` no entran en el cruce
+automático. En el mapa hay una lista aparte de **huérfanas de hora**:
+
+- Al elegir una, se dibujan los tracks de **ese día** (para las que no tienen `takenAt`, se elige
+  el día a mano).
+- El icono se puede **desplazar a lo largo del track** de ese día (con un control deslizante o
+  arrastrándolo, que se pega al track) o arrastrar libremente fuera de él.
+- Aceptar → `status: "manual"`, sin `reliability`, con el `track` en el que se dejó (si se dejó en
+  uno). Descartar → `discarded`.
 
 Si Leaflet no bastara (por ejemplo, para editar muchos puntos a la vez), la alternativa es JOSM o
 QGIS sobre un GeoJSON exportado y reimportado. No es el plan por defecto.
@@ -192,6 +230,7 @@ QGIS sobre un GeoJSON exportado y reimportado. No es el plan por defecto.
 ### Criterios de aceptación (fase 3)
 
 - Arrastrar, aceptar y descartar escriben lo esperado en el JSON y la foto sale de la lista.
+- Una huérfana de hora se puede desplazar por el track de su día y aceptar.
 - Las dos capas se pueden cambiar y el popup muestra la imagen.
 - E2E con Playwright sobre datos ficticios: aceptar una foto movida y descartar otra.
 
@@ -218,7 +257,7 @@ En cada item de `data/contributions/`, junto a los campos que ya hay:
 | `coordinates` | sí | Posición final (P o la que se fijó a mano). |
 | `status` | sí | `auto` (≥ 95 %), `manual` (aceptada o movida en el mapa), `discarded` (descartada) o `pending` (esperando revisión). |
 | `reliability` | no | Fiabilidad calculada (0–1), aunque luego se mueva a mano. No está si `Δt` > 12 h. |
-| `track` | sí | Id del track con que se calculó (sin rutas locales). |
+| `track` | sí, salvo huérfanas dejadas fuera de un track | Id del trozo con que se calculó (sin rutas locales). |
 | `timeOffsetSeconds`, `timeZone` | sí | Ajustes del track con que se calculó, para rehacerlo si cambian. |
 | `reviewedAt` | solo `manual`/`discarded` | Cuándo se decidió a mano (UTC). |
 
@@ -232,8 +271,7 @@ En `src/lib/load-contributions.ts`:
 - `pending` o sin `trackMatch` → `coordinates`, como hoy.
 - El esquema zod admite `trackMatch` opcional; si no es válido, se ignora el campo (la foto queda
   como sin él) en vez de romper el build.
-- Que la web distinga las posiciones deducidas (otro color, nota en el tooltip) se decide aquí:
-  ver sección 9.
+- La web **no distingue** las posiciones deducidas: se pintan igual que las demás.
 
 ## 8. Dónde va el código
 
@@ -246,11 +284,21 @@ En `src/lib/load-contributions.ts`:
 - Rutas por defecto: tracks en `../tracks/`, intermedios en `../tracks/procesado/`. Las dos se
   pueden cambiar con `--origen`.
 
-## 9. Decisiones pendientes (preguntar al usuario si afectan)
+## 9. Decisiones
 
-1. **¿De qué autores** se cruzan las fotos? Los tracks son de una persona: ¿sirven para motercode,
-   fernando gost o los dos?
-2. **Fotos que ya tienen posición:** ¿umbral de 200 m para darlas por confirmadas (sección 5.5) o
-   se cruzan todas?
-3. **En la web**, ¿se distinguen las posiciones deducidas?
-4. **`kml.kml` y `shape.gpkg`:** confirmar al leerlos que son lo mismo y que la hora es UTC.
+Tomadas (2026-11-14):
+
+1. Se cruzan las fotos de los dos autores; las fotos sin autor cuentan como de motercode.
+2. Una foto con posición que el track sitúa a menos de 200 m se da por confirmada.
+3. La web no distingue las posiciones deducidas.
+4. La hora de `kml.kml` es UTC.
+5. Los tracks se simplifican a un punto cada 5 minutos como mínimo y se parten en trozos de 4 h.
+6. Los tracks sin hora se incluyen con una hora inicial propuesta.
+7. Las fotos sin hora quedan como huérfanas y se colocan a mano sobre el track de su día.
+
+Pendientes:
+
+- Huecos del track: #24 (bloquea la fase 2).
+- Comprobación de que no entran ficheros de tracks en el repositorio: #25.
+- Al leer `shape.gpkg`, confirmar si es lo mismo que `kml.kml` (si lo es, los duplicados se quitan
+  solos en el paso 4).
