@@ -4,7 +4,8 @@ Especificación para implementar la feature **viajes** en myTravelsArround. Est�
 agente que no conoce el proyecto: primero el contexto, después lo que ya está hecho, lo que hay
 que hacer (por fases), las reglas exactas y los criterios para dar cada fase por terminada.
 
-Estado a 2026-10-17: solo especificación, no hay código de esta feature.
+Estado a 2026-11-14: solo especificación, no hay código de esta feature. Decisiones de la fase 1
+tomadas (sección 7).
 
 ## 1. Objetivo
 
@@ -22,7 +23,8 @@ la fase 1 no las bloquee, pero no hay que implementarlas hasta que se pidan.
 - Next.js 16 (App Router) + React 19 + Tailwind 4 + react-leaflet 5 (Leaflet 1.9) + zod 4. Node 22.
 - Sitio **estático** desplegado en Netlify (`export const dynamic = "force-static"` en `src/app/page.tsx`).
   No hay backend ni base de datos. Todo lo que dependa de los datos se calcula en el build o en el navegador.
-- `npm run dev` (puerto 3030), `npm run build`, `npm run lint`. No hay tests configurados.
+- `npm run dev` (puerto 3030), `npm run build`, `npm run lint`, `npm test` (Vitest) y
+  `npm run test:e2e` (Playwright).
 - Comentarios y textos de la interfaz en **español**. Mantener el estilo: comentarios breves que explican el porqué.
 
 Ficheros relevantes:
@@ -46,7 +48,9 @@ Ficheros relevantes:
 - Al exportar, mete en cada item del JSON dos campos **opcionales**:
   - `takenAt`: `"YYYY-MM-DDTHH:mm:ss"` (EXIF, hora local de la cámara, **sin zona horaria**) o
     `"YYYY-MM-DD"` (solo día).
-  - `takenAtSource`: `"exif"` o `"photometa"`.
+  - `takenAtSource`: `"exif"`, `"photometa"` o `"album"` (fotos de álbumes de Google Fotos sin
+    EXIF: la fecha que guarda el álbum, en hora local, con el mismo formato). Alinear los valores
+    entre los dos proyectos es parte de #31.
 - Si una foto no tiene fecha, esos campos **no aparecen** (nunca se exporta `null`).
 
 Ejemplo de item exportado:
@@ -68,9 +72,9 @@ Cuidado: **`capturedAt` NO es la fecha de la foto**, es cuándo se extrajo. No u
 
 Lo que falta en myTravelsArround (parte de la fase 1):
 
-- Los JSON de `data/contributions/` actuales se exportaron antes de esto y **no tienen `takenAt`**.
-  El usuario los volverá a exportar con `--dates` y los copiará; el código tiene que funcionar
-  igual con ficheros que tengan `takenAt` y con ficheros que no.
+- Los JSON de `data/contributions/` ya están reexportados con fechas (2026-11-14): `takenAt` en
+  27 585 de 27 826 items (27 343 `exif`, 237 `photometa`, 5 `album`). El código tiene que seguir
+  funcionando con items y ficheros sin `takenAt`.
 - `load-contributions.ts` y el tipo `Contribution` todavía no leen `takenAt`.
 
 ## 4. Fase 1: agrupar en viajes (primer corte)
@@ -92,9 +96,11 @@ Lo que falta en myTravelsArround (parte de la fase 1):
    - El umbral va en una constante: `MAX_EMPTY_DAYS_IN_TRIP = 2`.
 3. **Un día aislado también es un viaje** (de 1 día).
 4. **Fotos sin `takenAt`: no entran en ningún viaje.** Siguen viéndose en el mapa normal.
-5. **Autores: por defecto, viajes por autor.** Los viajes se calculan por separado para cada
-   autor (motercode y fernando gost son personas distintas). Que sea fácil cambiarlo si el
-   usuario prefiere mezclar autores: decisión pendiente, ver sección 7.
+5. **Viajes por autor** (decidido). Los viajes se calculan por separado para cada autor
+   (motercode y fernando gost son personas distintas). El autor es el **final**: el que sale de
+   la URL, con las fotos sin autor como de motercode (#7) y, cuando exista, la reasignación de
+   fotos concretas (#33). `buildTrips` recibe las fotos con el autor ya resuelto, así que la
+   reasignación no le afecta.
 6. **Orden dentro del viaje:** por `takenAt` ascendente. Si dos fotos tienen el mismo valor (o
    una solo tiene día), desempatar por `id` para que el orden sea estable entre builds.
 
@@ -120,6 +126,7 @@ export type Trip = {
   endDay: string;         // "YYYY-MM-DD"
   days: string[];         // solo los días que tienen fotos, ordenados
   photoIds: string[];     // Contribution.id, en orden cronológico (regla 6)
+  name?: string;          // opcional; no se rellena en la fase 1 (lo añade el panel de #32)
 };
 ```
 
@@ -137,10 +144,16 @@ export type Trip = {
    (`<MapView contributions={...} trips={buildTrips(...)} />`). Pasa a ser un prop más de un
    componente estático; no hace falta calcular nada en cliente.
 4. Interfaz (`map-view.tsx`):
-   - Control **"Viajes"** en la barra superior, junto al filtro de autor, que abre una lista.
-     Cada viaje muestra: fechas (`"29–30 sep 2020"`; si es de un día, solo ese día), número de
-     días con fotos, número de fotos y autor. Fechas con `Intl.DateTimeFormat("es-ES")`,
-     formateando a partir de `startDay`/`endDay` como fechas UTC para que no cambie el día.
+   - Control **"Viajes"** en la barra superior, junto al filtro de autor: un **desplegable**
+     (decidido; no un panel lateral).
+   - Dentro, los viajes se agrupan **por año**, calculado automáticamente con el año de
+     `startDay` (un viaje del 30 dic al 2 ene va en el año en que empieza). Cada año es a su vez
+     **desplegable** y muestra su número de viajes; años de más reciente a más antiguo. Por
+     defecto, solo el año más reciente abierto.
+   - Cada viaje muestra: fechas (`"29–30 sep 2020"`; si es de un día, solo ese día), número de
+     días con fotos, número de fotos y autor. Si tiene `name`, el nombre va delante de las fechas.
+     Fechas con `Intl.DateTimeFormat("es-ES")`, formateando a partir de `startDay`/`endDay` como
+     fechas UTC para que no cambie el día.
    - Al elegir un viaje: el mapa muestra **solo sus fotos** y se encuadra con `fitBounds` sobre
      ellas (mismo padding y `maxZoom` que el encuadre inicial de `travel-map.tsx`).
    - Una opción **"Todas las fotos"** quita el filtro.
@@ -165,9 +178,9 @@ export type Trip = {
 - Las fotos sin `takenAt` no aparecen en ningún viaje y siguen en el mapa con "Todas las fotos".
 - Los `Trip.id` no cambian entre dos builds con los mismos datos.
 - Elegir un viaje filtra el mapa y lo encuadra. "Todas las fotos" vuelve al estado inicial.
-
-Para comprobar `buildTrips` sin infraestructura de tests: un script temporal con estos casos
-(o añadir `vitest` si el usuario lo aprueba; ahora no hay framework de tests).
+- Los viajes salen agrupados por año; un viaje del `2020-12-30` al `2021-01-02` está en 2020.
+- Tests unitarios de `buildTrips` con Vitest (`src/lib/trips.test.ts`) sobre fotos ficticias con
+  estos casos, y un E2E que abre el desplegable, despliega un año y elige un viaje.
 
 ## 5. Fase 2: ver las fotos de un viaje una tras otra (no implementar todavía)
 
@@ -205,10 +218,17 @@ Para comprobar `buildTrips` sin infraestructura de tests: un script temporal con
 - Atajos que salen gratis con la fase 1: "Ver este viaje" y "Ver este día".
 - Con unas 2.000 fotos todo se calcula en el navegador al momento; no hace falta backend.
 
-## 7. Decisiones pendientes (preguntar al usuario si afectan)
+## 7. Decisiones
 
-1. ¿Viajes por autor (por defecto) o mezclando autores?
-2. ¿Dónde va la lista de viajes: un desplegable en la barra (propuesta) o un panel lateral?
-3. ¿Hace falta un nombre para cada viaje (por ejemplo, la ciudad más frecuente con Nominatim
-   inverso)? Por defecto, no: se identifica por las fechas.
-4. Umbral `MAX_EMPTY_DAYS_IN_TRIP`: 2 por ahora. Confirmar si se quiere configurable desde la interfaz.
+Tomadas (2026-11-14):
+
+1. **Viajes por autor**, no mezclados. Tiene que poder cambiarse el autor de fotos concretas: #33.
+2. **Lista en un desplegable**, con subcategorías automáticas **por año**, también desplegables.
+3. **Nombre del viaje: no hace falta**, pero tiene que poder añadirse. Se hará desde un panel de
+   administración local (#32, a hablar); en la fase 1 solo se deja el campo opcional `name` y se
+   muestra si existe.
+4. **`MAX_EMPTY_DAYS_IN_TRIP` = 2, no configurable desde la web pública.** Si se configura, será
+   desde el panel de #32.
+
+Pendiente fuera de esta fase: que el id del viaje (`<autor>-<primer día>`) sea lo bastante estable
+para no perder el nombre al añadir fotos o reasignar autores (#32).
