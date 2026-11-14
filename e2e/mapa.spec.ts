@@ -64,3 +64,16 @@ test("elegir un viaje deja en el mapa solo sus fotos y «Todas las fotos» las r
   await page.getByRole("button", { name: "Todas las fotos" }).click();
   await expect(contador).toHaveText(new RegExp(`^${total} fotos en el mapa`));
 });
+
+test("las fotos salen agrupadas y al pulsar un grupo el mapa se acerca", async ({ page }) => {
+  await page.goto("/");
+  await esperarMapa(page);
+  const grupos = page.locator(".marker-cluster");
+  await expect(grupos.first()).toBeVisible();
+
+  // El zoom se lee de las teselas (…/{z}/{x}/{y}.png): no hace falta que carguen.
+  const zoom = async () => Number((await page.locator(".leaflet-tile").last().getAttribute("src"))?.match(/\/(\d+)\/\d+\/\d+\.png/)?.[1]);
+  const antes = await zoom();
+  await grupos.first().click();
+  await expect.poll(zoom, { timeout: 10_000 }).toBeGreaterThan(antes);
+});

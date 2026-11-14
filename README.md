@@ -8,7 +8,7 @@ Se despliega en Netlify como sitio estático generado con Next.js: https://mytra
 ## Funcionalidades
 
 - Mapa de OpenStreetMap a pantalla completa (moverse, zoom), que arranca encuadrado sobre las fotos.
-- Un punto azul por foto. Al pasar el ratón se ve la miniatura y el autor; al hacer clic se abre la foto en Google Maps (o en su álbum de Google Fotos).
+- Fotos agrupadas por zona: cada grupo muestra cuántas fotos tiene y es más grande cuantas más hay; al pulsarlo, el mapa se acerca. De cerca, un punto azul por foto: al pasar el ratón se ve la miniatura y el autor, y al hacer clic se abre la foto en Google Maps (o en su álbum de Google Fotos).
 - Buscador de lugares y POI (Nominatim): al elegir un resultado, el mapa vuela hasta allí.
 - Filtro por autor, con el número de fotos de cada uno.
 - Viajes: un desplegable con los viajes de cada autor agrupados por año. Al elegir uno, el mapa muestra solo sus fotos y se encuadra sobre ellas. Un viaje son días con fotos con 2 días o menos sin fotos entre ellos, según la fecha de cada foto (`takenAt`, que `contribExtraction` exporta con `--dates`).
@@ -165,10 +165,15 @@ Por eso existe `contribExtraction`. Recorre el perfil público en un navegador C
 - Tests unitarios con Vitest sobre datos ficticios y E2E con Playwright contra `npm run dev` en
   `localhost` (con `127.0.0.1`, Next.js 16 no hidrata la página en desarrollo).
 
-### Puntos sin agrupar, dibujados en canvas
+### Fotos agrupadas por zoom con supercluster
 
-Los puntos se dibujan en canvas (`preferCanvas`), que aguanta varios miles sin problema y deja ver la densidad real de fotos.
-Si el mapa se satura, se puede añadir agrupación de marcadores.
+Con más de 21 000 fotos, un marcador por foto bloqueaba la página: 3 s para volver a mostrar un autor y 188 MB de memoria, y en las zonas densas los puntos se tapaban (#9). Ahora se agrupan con [supercluster](https://github.com/mapbox/supercluster) y solo se dibuja lo que se ve:
+
+- **Solo el área visible.** Cada vez que se mueve el mapa se piden a supercluster los grupos y las fotos de esa zona: unas decenas de elementos en vez de 21 000. Con los datos de 2026-11: carga en 1,1 s en vez de 2,4 s, volver a mostrar un autor en 0,2 s en vez de 3 s y 60 MB de memoria en vez de 188 (versión de producción, en local).
+- **Se sigue viendo la densidad.** Cada grupo muestra su número de fotos y crece con su logaritmo (30 px con 2 fotos, 60 px con 10 000).
+- **Filtros intactos.** El índice se rehace con las fotos visibles, así que el filtro por autor y el de viaje agrupan solo lo que queda.
+- **De cerca, todas sueltas.** A partir del zoom 17 no se agrupa (`CLUSTER_MAX_ZOOM`), y las fotos sueltas siguen en canvas, con la zona de clic ampliada (#37).
+- **Por qué supercluster y no `leaflet.markercluster`.** No crea un elemento DOM por foto ni necesita un envoltorio para react-leaflet: es una librería pequeña, sin DOM, y la lógica (`src/lib/clusters.ts`) se prueba sin navegador.
 
 ## Prioridades
 
